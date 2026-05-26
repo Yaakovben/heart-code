@@ -75,9 +75,26 @@ function useQuillTicker(active) {
   }, [active]);
 }
 
+function useViewportSize() {
+  const [size, setSize] = useState(() => ({
+    w: typeof window !== "undefined" ? window.innerWidth : 1024,
+    h: typeof window !== "undefined" ? window.innerHeight : 768,
+  }));
+  useEffect(() => {
+    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return size;
+}
+
 export default function LetterScene() {
   const [done, setDone] = useState(false);
   useQuillTicker(!done);
+  const { w: vw } = useViewportSize();
+  // Fluid font + hand sizing across phones, tablets, desktops.
+  const fontSize = Math.round(Math.max(18, Math.min(30, vw * 0.045)));
+  const handWidth = Math.round(Math.max(110, Math.min(180, vw * 0.28)));
 
   return (
     <motion.section
@@ -98,9 +115,9 @@ export default function LetterScene() {
           <div className="hw-scroll">
             <HandwritingCanvas
               lines={lines}
-              fontSize={26}
-              speed={520}
-              lineGap={1.5}
+              fontSize={fontSize}
+              handWidth={handWidth}
+              lineGap={1.55}
               onDone={() => setDone(true)}
             />
           </div>

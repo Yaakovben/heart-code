@@ -527,8 +527,11 @@ body::after {
   align-items: center;
   gap: 6px;
   padding: 5px 6px 5px 14px;
-  min-width: 240px;
+  min-width: min(240px, 70vw);
+  max-width: 100%;
+  width: min(280px, 78vw);
   transition: background 0.3s ease;
+  box-sizing: border-box;
 }
 .chat2-bubble-input.is-error {
   background: linear-gradient(135deg, #e07070, #a83838);
@@ -1443,6 +1446,36 @@ body::after {
 }
 .hw-canvas svg path { vector-effect: non-scaling-stroke; }
 
+/* ============================================================
+   RESPONSIVE — phones, small tablets
+   ============================================================ */
+@media (max-width: 640px) {
+  .app-shell { padding: 12px 8px; }
+  .letter-stage-real { width: 100%; }
+  .letter-paper-real {
+    min-height: 88vh;
+    padding: 36px 6px 70px;
+    border-radius: 2px;
+  }
+  .letter-paper-real::after { inset: 12px 6px 16px 6px; }
+  .letter-monogram { font-size: 0.95rem; letter-spacing: 0.2em; }
+  .hw-scroll { max-height: 76vh; }
+  .bottom-nav { bottom: 14px; gap: 8px; }
+  .nav-btn { padding: 11px 22px; font-size: 0.86rem; letter-spacing: 0.14em; }
+  .mute-btn { top: 12px; right: 12px; width: 38px; height: 38px; }
+}
+
+@media (max-width: 420px) {
+  .letter-paper-real { padding: 28px 4px 60px; }
+  .letter-monogram { margin-bottom: 8px; font-size: 0.85rem; }
+  .nav-btn { padding: 10px 18px; font-size: 0.8rem; }
+}
+
+@media (max-height: 620px) {
+  .letter-paper-real { min-height: 96vh; padding-top: 24px; padding-bottom: 56px; }
+  .hw-scroll { max-height: 80vh; }
+}
+
 /* Pen following text */
 .pen-track {
   position: relative;
@@ -1460,7 +1493,177 @@ body::after {
 }
 
 /* ============================================================
-   VIDEO (Scene 3) — LUXE INVITATION
+   VIDEO (Scene 3) — V3 modern Apple/Spotify Story
+   ============================================================ */
+.scene.v3 {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 8px 80px;
+  isolation: isolate;
+}
+.v3-aura {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.55;
+  will-change: transform;
+}
+.v3-aura-1 {
+  width: 70%;
+  aspect-ratio: 1;
+  top: 10%;
+  left: -20%;
+  background: radial-gradient(circle, #ff8aa8 0%, transparent 70%);
+  animation: v3Float1 12s ease-in-out infinite alternate;
+}
+.v3-aura-2 {
+  width: 65%;
+  aspect-ratio: 1;
+  top: 35%;
+  right: -25%;
+  background: radial-gradient(circle, #c88aff 0%, transparent 70%);
+  animation: v3Float2 14s ease-in-out infinite alternate;
+}
+.v3-aura-3 {
+  width: 80%;
+  aspect-ratio: 1;
+  bottom: -10%;
+  left: 10%;
+  background: radial-gradient(circle, #ffb672 0%, transparent 70%);
+  animation: v3Float1 16s ease-in-out infinite alternate;
+}
+@keyframes v3Float1 { from { transform: translate(0,0); } to { transform: translate(30px, -20px); } }
+@keyframes v3Float2 { from { transform: translate(0,0); } to { transform: translate(-30px, 25px); } }
+
+.v3-overline {
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(251, 238, 211, 0.55);
+  margin-bottom: 8px;
+}
+.v3-title {
+  font-family: "Heebo", "Inter", sans-serif;
+  font-weight: 800;
+  font-size: clamp(2.6rem, 9vw, 3.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1;
+  margin: 0 0 26px;
+  background: linear-gradient(180deg, #fff7ec 0%, #f5d4dc 60%, #c89aff 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}
+
+.v3-frame {
+  position: relative;
+  width: 100%;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 9/16;
+  max-height: 64vh;
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 80px rgba(200, 138, 255, 0.18);
+}
+@media (min-aspect-ratio: 3/4) {
+  .v3-frame { aspect-ratio: 16/9; max-height: 62vh; }
+}
+.v3-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+.v3-fs {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(10, 10, 14, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  z-index: 5;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.v3-fs:hover {
+  background: rgba(20, 20, 24, 0.75);
+  transform: scale(1.06);
+}
+
+.v3-demo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  text-align: center;
+  background: linear-gradient(135deg, #ff8aa8 0%, #c88aff 50%, #ffb672 100%);
+}
+.v3-play {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  margin: 0 auto 16px;
+  backdrop-filter: blur(10px);
+}
+.v3-demo p {
+  font-family: "Heebo", sans-serif;
+  font-weight: 500;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.v3-meta {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.v3-track-title {
+  font-family: "Heebo", "Inter", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.v3-track-sub {
+  font-family: "Heebo", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(251, 238, 211, 0.55);
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   VIDEO (Scene 3) — OLD LUXE INVITATION (unused, kept)
    ============================================================ */
 .video-scene-luxe {
   position: relative;

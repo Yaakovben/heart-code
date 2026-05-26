@@ -20,6 +20,7 @@ type Props = {
   fontSize?: number;
   charDelay?: number;
   lineGap?: number;
+  handWidth?: number;
   onDone?: () => void;
 };
 
@@ -87,6 +88,7 @@ export default function HandwritingCanvas({
   fontSize = 30,
   charDelay = 95,
   lineGap = 1.6,
+  handWidth = 150,
   onDone,
 }: Props) {
   const [font, setFont] = useState<opentype.Font | null>(null);
@@ -101,12 +103,17 @@ export default function HandwritingCanvas({
     loadFont().then(setFont).catch((e) => console.error("font load fail", e));
   }, []);
 
-  // Build wrapped lines when font / source text / size changes.
+  // Build wrapped lines when font / source text / size changes — and on resize.
   useEffect(() => {
     if (!font) return;
-    const w = Math.max(200, (containerRef.current?.clientWidth ?? 420) - 8);
-    setMaxLineWidth(w);
-    setLineData(wrapLines(font, lines, fontSize, w));
+    const rebuild = () => {
+      const w = Math.max(200, (containerRef.current?.clientWidth ?? 420) - 8);
+      setMaxLineWidth(w);
+      setLineData(wrapLines(font, lines, fontSize, w));
+    };
+    rebuild();
+    window.addEventListener("resize", rebuild);
+    return () => window.removeEventListener("resize", rebuild);
   }, [font, lines, fontSize]);
 
   // Keep the active line + hand area above the bottom fade.
@@ -227,7 +234,7 @@ export default function HandwritingCanvas({
             zIndex: 10,
           }}
         >
-          <HandPen />
+          <HandPen width={handWidth} />
         </div>
       )}
     </div>
@@ -271,7 +278,7 @@ function computeHandPos(
 }
 
 // ---------- hand+pen ----------
-function HandPen() {
+function HandPen({ width = 150 }: { width?: number }) {
   return (
     <div
       style={{
@@ -285,7 +292,7 @@ function HandPen() {
         alt=""
         draggable={false}
         style={{
-          width: "150px",
+          width: `${width}px`,
           height: "auto",
           display: "block",
           transformOrigin: "12px 10px",

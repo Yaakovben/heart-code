@@ -34,153 +34,85 @@ export default function VideoScene() {
 
   return (
     <motion.section
-      className="scene video-scene-luxe"
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+      className="scene v3"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.9 }}
     >
-      {/* Romantic ambient glow */}
-      <div className="video-bg-glow" aria-hidden />
-
-      {/* Floating petals around the frame */}
-      <div className="petals" aria-hidden>
-        {[
-          { l: "6%", t: "12%", d: 0, dur: 9, r: -15 },
-          { l: "92%", t: "18%", d: 1.4, dur: 11, r: 18 },
-          { l: "8%", t: "72%", d: 2.6, dur: 10, r: 12 },
-          { l: "90%", t: "78%", d: 0.7, dur: 12, r: -22 },
-          { l: "50%", t: "4%", d: 3.2, dur: 9, r: 6 },
-          { l: "16%", t: "44%", d: 4.5, dur: 13, r: -8 },
-          { l: "84%", t: "48%", d: 5.1, dur: 12, r: 14 },
-        ].map((p, i) => (
-          <motion.span
-            key={i}
-            className="petal"
-            style={{ left: p.l, top: p.t }}
-            animate={{
-              y: [0, -10, 0],
-              x: [0, 8, 0],
-              rotate: [p.r, p.r + 12, p.r],
-              opacity: [0.55, 0.95, 0.55],
-            }}
-            transition={{ duration: p.dur, repeat: Infinity, ease: "easeInOut", delay: p.d }}
-          >
-            🌹
-          </motion.span>
-        ))}
-      </div>
+      {/* Ambient color blobs — Spotify gradient feel */}
+      <div className="v3-aura v3-aura-1" />
+      <div className="v3-aura v3-aura-2" />
+      <div className="v3-aura v3-aura-3" />
 
       <motion.div
-        className="video-overline"
+        className="v3-overline"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 1 }}
+        transition={{ delay: 0.3, duration: 0.9 }}
       >
-        <span className="overline-line" />
-        <span className="overline-heart">♥</span>
-        <span className="overline-text">A moment for you</span>
-        <span className="overline-heart">♥</span>
-        <span className="overline-line" />
+        Just for you
       </motion.div>
 
-      <motion.h2
-        className="video-title"
+      <motion.h1
+        className="v3-title"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.65, duration: 1 }}
+        transition={{ delay: 0.45, duration: 0.9 }}
       >
-        בשבילך, אהובתי
-      </motion.h2>
+        בשבילך
+      </motion.h1>
 
       <motion.div
-        className="video-frame-luxe"
-        initial={{ y: 28, opacity: 0, scale: 0.96 }}
-        animate={{ y: 0, opacity: 1, scale: 1 }}
-        transition={{ duration: 1.1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="v3-frame"
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0.2, duration: 1, ease: [0.22, 1, 0.36, 1] }}
       >
-        <span className="corner corner-tl" />
-        <span className="corner corner-tr" />
-        <span className="corner corner-bl" />
-        <span className="corner corner-br" />
-
-        <div className="video-inner-luxe">
-          <video
-            ref={videoRef}
-            src={localVideoUrl}
-            playsInline
-            autoPlay
-            controls={hasVideo}
-            style={{ display: hasVideo ? "block" : "none" }}
-          />
-          {!hasVideo && (
-            <div className="video-demo">
-              <div>
-                <motion.div
-                  className="play-pulse"
-                  animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  ▶
-                </motion.div>
-                <p style={{ margin: 0, fontFamily: "Cormorant Garamond, serif", fontStyle: "italic" }}>
-                  הסרטון שלך
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
+        <video
+          ref={videoRef}
+          src={localVideoUrl}
+          playsInline
+          autoPlay
+          controls={hasVideo}
+          style={{ display: hasVideo ? "block" : "none" }}
+        />
+        {!hasVideo && (
+          <div className="v3-demo">
+            <motion.div
+              className="v3-play"
+              animate={{ scale: [1, 1.08, 1], opacity: [0.85, 1, 0.85] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              ▶
+            </motion.div>
+            <p>הסרטון שלך</p>
+          </div>
+        )}
         {hasVideo && (
-          <motion.button
-            className="fs-btn"
+          <button
+            className="v3-fs"
             onClick={goFullscreen}
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
+            aria-label="מסך מלא"
             title="מסך מלא"
           >
-            ⛶
-          </motion.button>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+                fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         )}
       </motion.div>
 
       <motion.div
-        className="video-ornament"
+        className="v3-meta"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.9, duration: 1 }}
+        transition={{ delay: 0.7, duration: 0.9 }}
       >
-        <span className="orn-line" />
-        <motion.span
-          className="orn-diamond"
-          animate={{ scale: [1, 1.15, 1] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          ♥
-        </motion.span>
-        <span className="orn-line" />
-      </motion.div>
-
-      <motion.p
-        className="video-tagline"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.05, duration: 1 }}
-      >
-        תהני מהערב, יפהפייה<br />
-        <span className="tagline-soft">העולם כולו שלך הלילה</span>
-      </motion.p>
-
-      <motion.div
-        className="video-signature"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.4, duration: 1 }}
-      >
-        ~ באהבה אינסופית, שלך ~
+        <div className="v3-track-title">מסר אישי</div>
+        <div className="v3-track-sub">יעקב · באהבה אינסופית</div>
       </motion.div>
     </motion.section>
   );
