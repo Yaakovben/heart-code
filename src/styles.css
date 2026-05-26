@@ -1674,23 +1674,18 @@ body::after {
   border-radius: 32px;
   overflow: hidden;
   background: #000;
-  aspect-ratio: 9/16;
-  max-height: 72vh;
   box-shadow:
     0 36px 80px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 200, 220, 0.25),
     0 0 60px rgba(255, 120, 160, 0.35),
     0 0 120px rgba(255, 140, 180, 0.2);
 }
-@media (min-aspect-ratio: 3/4) {
-  .v3-frame { aspect-ratio: 16/9; max-height: 68vh; }
-}
 .v3-frame video {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: 80vh;
   display: block;
   background: #000;
+  object-fit: contain;
 }
 .v3-fs {
   position: absolute;

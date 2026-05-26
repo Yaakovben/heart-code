@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import * as opentype from "opentype.js";
-import ankaFontUrl from "../assets/fonts/alef.ttf?url";
+import ankaFontUrl from "../assets/fonts/bellefair.ttf?url";
 import handPenUrl from "../assets/hand-pen.png";
 
 // ---------- types ----------
@@ -227,7 +227,7 @@ export default function HandwritingCanvas({
   }
 
   const svgW = maxLineWidth;
-  const totalHeight = lineData.length * fontSize * lineGap;
+  const totalHeight = lineData.length * fontSize * lineGap + fontSize;
   const activeLine = lineData[activeLineIdx];
   const handPos = computeHandPos(activeLine, activeLineIdx, activeGlyphIdx, svgW, fontSize, lineGap);
 
@@ -235,11 +235,12 @@ export default function HandwritingCanvas({
     <div
       ref={containerRef}
       className="hw-canvas"
-      style={{ position: "relative", width: "100%", minHeight: totalHeight + 40 }}
+      style={{ position: "relative", width: "100%", height: totalHeight }}
     >
       <svg
         width="100%"
-        viewBox={`0 0 ${svgW} ${totalHeight + fontSize * 2}`}
+        height={totalHeight}
+        viewBox={`0 0 ${svgW} ${totalHeight}`}
         preserveAspectRatio="xMidYMin meet"
         style={{
           overflow: "visible",
