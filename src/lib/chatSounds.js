@@ -64,7 +64,7 @@ function playReceivedInner() {
   } catch {}
 }
 
-// WhatsApp "ting" — louder, simpler, more reliable
+// Sent — bright clean two-tone "ting", reliable across browsers.
 export function playSent() {
   bufferOrPlay(playSentInner);
 }
@@ -73,24 +73,24 @@ function playSentInner() {
     const ctx = getCtx();
     if (!ctx) return;
     const now = ctx.currentTime;
-
-    // Bright two-partial bell — clearly audible
+    // Two ascending sine partials = clear bell, audible & WhatsApp-ish.
     const partials = [
-      { freq: 1480, peak: 0.4, dur: 0.22 },
-      { freq: 2960, peak: 0.18, dur: 0.18 },
+      { freq: 1320, peak: 0.35, dur: 0.20, delay: 0 },
+      { freq: 2200, peak: 0.22, dur: 0.18, delay: 0.025 },
     ];
-    partials.forEach(({ freq, peak, dur }) => {
+    for (const { freq, peak, dur, delay } of partials) {
+      const t0 = now + delay;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(peak, now + 0.005);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
       osc.connect(gain).connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + dur + 0.02);
-    });
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    }
   } catch {}
 }
 

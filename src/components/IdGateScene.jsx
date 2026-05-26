@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { playSent, playError, playKey, unlockAudio, isAudioReady } from "../lib/chatSounds";
+import { playSent, playError, unlockAudio } from "../lib/chatSounds";
 
 // 👇 הסיסמה — מה שיעקב עונה
 const ALLOWED = ["משהו", "משהו!", "משהו.", "משהוו", "משהוווו"];
@@ -9,56 +9,28 @@ export default function IdGateScene({ onUnlock }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
-  // Aggressively try to unlock audio on ANY user interaction
+
+  // Unlock audio on the first real user gesture. Browser policy requires it,
+  // otherwise the AudioContext stays suspended and playSent() is silent.
   useEffect(() => {
-    unlockAudio(); // attempt immediately
     const handler = () => unlockAudio();
-    const evs = ["pointerdown", "touchstart", "click", "keydown", "scroll", "mousemove"];
+    const evs = ["pointerdown", "touchstart", "click", "keydown"];
     evs.forEach((ev) => window.addEventListener(ev, handler, { passive: true }));
     return () => evs.forEach((ev) => window.removeEventListener(ev, handler));
   }, []);
 
-  // Auto-paced reveal — sound on the two "real" message bubbles only.
-  // For the first bubble, briefly wait for audio (max ~1.5s) so the sound plays in sync.
+  // Auto-paced reveal. Never blocks on audio — if the first "sent" sound is
+  // skipped on cold refresh (no interaction yet), all subsequent ones still play.
   const [step, setStep] = useState(0);
   useEffect(() => {
     const times = [900, 1100, 1500, 1200];
     if (step >= times.length) return;
-    let timer = null;
-    let pollId = null;
-    let started = Date.now();
-
-    const advance = () => {
-      const nextStep = step + 1;
-      if (nextStep === 1 || nextStep === 3) playSent();
-      setStep(nextStep);
-    };
-
-    if (step === 0) {
-      // wait for audio OR until baseTime + maxWait, whichever first
-      const baseDelay = times[0];
-      const maxExtraWait = 1500;
-      timer = setTimeout(() => {
-        if (isAudioReady()) {
-          advance();
-        } else {
-          // Keep polling for audio for up to maxExtraWait
-          pollId = setInterval(() => {
-            if (isAudioReady() || Date.now() - started > baseDelay + maxExtraWait) {
-              clearInterval(pollId);
-              advance();
-            }
-          }, 100);
-        }
-      }, baseDelay);
-    } else {
-      timer = setTimeout(advance, times[step]);
-    }
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      if (pollId) clearInterval(pollId);
-    };
+    const timer = setTimeout(() => {
+      const next = step + 1;
+      if (next === 1 || next === 3) playSent();
+      setStep(next);
+    }, times[step]);
+    return () => clearTimeout(timer);
   }, [step]);
 
   const showHisInitialTyping = step === 0;
@@ -88,9 +60,7 @@ export default function IdGateScene({ onUnlock }) {
   };
 
   const onTypeChange = (e) => {
-    const next = e.target.value;
-    if (next.length > value.length) playKey();
-    setValue(next);
+    setValue(e.target.value);
   };
 
   return (

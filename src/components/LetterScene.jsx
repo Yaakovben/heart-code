@@ -8,7 +8,7 @@ const lines = message
   .map((l) => l.trim())
   .filter(Boolean);
 
-// Soft quill scratch — ticks while writing
+// Soft writing sound — fountain pen on paper, gentle and warm.
 function useQuillTicker(active) {
   const ctxRef = useRef(null);
   const bufRef = useRef(null);
@@ -16,7 +16,7 @@ function useQuillTicker(active) {
 
   useEffect(() => {
     if (!active) {
-      clearInterval(idRef.current);
+      if (idRef.current) clearTimeout(idRef.current);
       idRef.current = null;
       return;
     }
@@ -25,29 +25,53 @@ function useQuillTicker(active) {
         if (!ctxRef.current) {
           ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
           const ctx = ctxRef.current;
-          const buf = ctx.createBuffer(1, ctx.sampleRate * 0.4, ctx.sampleRate);
+          // Brown-noise-ish buffer (low frequencies only) — feels like cloth/paper rustle.
+          const len = ctx.sampleRate * 1.2;
+          const buf = ctx.createBuffer(1, len, ctx.sampleRate);
           const data = buf.getChannelData(0);
-          for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+          let last = 0;
+          for (let i = 0; i < len; i++) {
+            const white = Math.random() * 2 - 1;
+            last = (last + 0.02 * white) / 1.02;
+            data[i] = last * 3.0;
+          }
           bufRef.current = buf;
         }
         const ctx = ctxRef.current;
         const now = ctx.currentTime;
         const src = ctx.createBufferSource();
         src.buffer = bufRef.current;
-        src.start(now, Math.random() * 0.2, 0.05);
+        // Long soft swish (200-400ms) — pen gliding across paper.
+        const swishDur = 0.22 + Math.random() * 0.18;
+        src.start(now, Math.random() * 0.8, swishDur);
+
+        // Very dark filter — only the soft low rumble passes.
+        const lp = ctx.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 900;
+        lp.Q.value = 0.4;
+
+        // Subtle "shape" — slight bandpass around 500Hz for paper texture.
         const bp = ctx.createBiquadFilter();
         bp.type = "bandpass";
-        bp.frequency.value = 2300 + Math.random() * 600;
-        bp.Q.value = 1.6;
+        bp.frequency.value = 480 + Math.random() * 120;
+        bp.Q.value = 0.5;
+
         const gain = ctx.createGain();
+        // Smooth attack/decay — never harsh, never punchy.
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.012, now + 0.005);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
-        src.connect(bp).connect(gain).connect(ctx.destination);
+        gain.gain.exponentialRampToValueAtTime(0.006, now + swishDur * 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + swishDur);
+        src.connect(bp).connect(lp).connect(gain).connect(ctx.destination);
       } catch {}
+      // Long gentle pauses between swishes — like writing real sentences.
+      const next = 320 + Math.random() * 280;
+      idRef.current = setTimeout(play, next);
     };
-    idRef.current = setInterval(play, 110);
-    return () => clearInterval(idRef.current);
+    idRef.current = setTimeout(play, 250);
+    return () => {
+      if (idRef.current) clearTimeout(idRef.current);
+    };
   }, [active]);
 }
 
