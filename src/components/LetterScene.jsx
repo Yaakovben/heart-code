@@ -131,13 +131,14 @@ export default function LetterScene() {
         transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
       >
         <div className="letter-paper-real">
+          <span className="letter-bsd">בס״ד</span>
           <div className="letter-monogram">~ ❦ ~</div>
           <div className="hw-scroll">
             <HandwritingCanvas
               lines={lines}
               fontSize={fontSize}
               handWidth={handWidth}
-              lineGap={1.55}
+              lineGap={1.25}
               onDone={() => setDone(true)}
             />
           </div>

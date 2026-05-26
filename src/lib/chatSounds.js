@@ -41,7 +41,8 @@ function bufferOrPlay(fn) {
 
 // Soft incoming-message tap (two-note pop)
 export function playReceived() {
-  bufferOrPlay(playReceivedInner);
+  if (!isReady()) return;
+  playReceivedInner();
 }
 function playReceivedInner() {
   try {
@@ -65,8 +66,11 @@ function playReceivedInner() {
 }
 
 // Sent — bright clean two-tone "ting", reliable across browsers.
+// IMPORTANT: only plays if audio is ready RIGHT NOW. Never queued/delayed —
+// otherwise late playback would feel disconnected from the on-screen action.
 export function playSent() {
-  bufferOrPlay(playSentInner);
+  if (!isReady()) return;
+  playSentInner();
 }
 function playSentInner() {
   try {
@@ -122,7 +126,8 @@ export function playKey() {
 
 // Soft error blip (low descending tone)
 export function playError() {
-  bufferOrPlay(playErrorInner);
+  if (!isReady()) return;
+  playErrorInner();
 }
 function playErrorInner() {
   try {

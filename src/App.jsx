@@ -12,15 +12,26 @@ export default function App() {
   const [muted, setMuted] = useState(false);
   const soundRef = useRef(null);
 
-  // Init music with Howler — starts after the ID gate is unlocked
+  // Init music with Howler — starts after the ID gate is unlocked.
+  // First 12 seconds of the track are skipped on every play AND every loop.
   useEffect(() => {
     if (stage === "gate") return;
     if (!soundRef.current) {
       soundRef.current = new Howl({
         src: [localMusicUrl],
-        loop: true,
+        loop: false, // we'll loop manually via onend so we can skip to 12s every time
         volume: 0,
         html5: true,
+        preload: true,
+        onplay: function () {
+          // Skip intro on the very first play of each loop cycle.
+          if (this.seek() < 12) this.seek(12);
+        },
+        onend: function () {
+          // Manual loop — restart at 12s.
+          this.seek(12);
+          this.play();
+        },
       });
     }
     const s = soundRef.current;
@@ -53,33 +64,43 @@ export default function App() {
             </motion.button>
           )}
 
-          <motion.nav
-            className="bottom-nav"
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-          >
-            {stage === "video" && (
-              <motion.button
-                className="nav-btn"
-                onClick={() => setStage("letter")}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                ← חזרה למכתב
-              </motion.button>
-            )}
-            {stage === "letter" && (
-              <motion.button
-                className="nav-btn primary"
-                onClick={() => setStage("video")}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                להמשך ←
-              </motion.button>
-            )}
-          </motion.nav>
+          {/* Back arrow — top-left corner, discreet */}
+          {stage === "video" && (
+            <motion.button
+              className="nav-back-top"
+              onClick={() => setStage("letter")}
+              initial={{ x: -30, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.94 }}
+              aria-label="חזרה למכתב"
+            >
+              <span>חזרה למכתב</span>
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </motion.button>
+          )}
+
+          {/* Primary continue — floating, bottom-left (Hebrew RTL forward = left) */}
+          {stage === "letter" && (
+            <motion.button
+              className="nav-continue"
+              onClick={() => setStage("video")}
+              initial={{ x: -30, y: 12, opacity: 0 }}
+              animate={{ x: 0, y: 0, opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="המשך"
+            >
+              <span>להמשך</span>
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </motion.button>
+          )}
         </>
       )}
 

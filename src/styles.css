@@ -1324,6 +1324,17 @@ body::after {
     radial-gradient(ellipse 60% 50% at center, transparent 60%, rgba(140, 90, 40, 0.12) 100%);
   border-radius: 4px;
 }
+.letter-bsd {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  font-family: "Frank Ruhl Libre", "Cormorant Garamond", serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgba(80, 40, 10, 0.65);
+  letter-spacing: 0.02em;
+  z-index: 5;
+}
 .letter-monogram {
   font-family: "Cormorant Garamond", serif;
   font-style: italic;
@@ -1381,27 +1392,54 @@ body::after {
 .letter-paper-real {
   position: relative;
   width: 100%;
-  padding: 40px 18px 60px;
+  padding: 52px 28px 64px;
   overflow: hidden;
-  background-color: #fbf3e0;
-  background-image:
-    url("https://www.transparenttextures.com/patterns/cream-paper.png"),
-    radial-gradient(ellipse at 30% 20%, #fff8e8 0%, #f0dcb4 70%, #d9b889 100%);
-  background-blend-mode: multiply, normal;
-  border-radius: 3px;
+  color: #2a1808;
+  background:
+    radial-gradient(ellipse 110px 70px at 14% 14%, rgba(120, 70, 25, 0.22), transparent 70%),
+    radial-gradient(ellipse 80px 50px at 86% 18%, rgba(140, 85, 35, 0.18), transparent 70%),
+    radial-gradient(ellipse 70px 60px at 88% 82%, rgba(120, 70, 25, 0.20), transparent 70%),
+    radial-gradient(ellipse 100px 70px at 16% 88%, rgba(110, 65, 20, 0.18), transparent 70%),
+    radial-gradient(ellipse 40px 30px at 65% 40%, rgba(150, 90, 40, 0.10), transparent 70%),
+    radial-gradient(ellipse 30px 25px at 30% 60%, rgba(150, 90, 40, 0.09), transparent 70%),
+    radial-gradient(ellipse 110% 100% at center, transparent 45%, rgba(120, 60, 15, 0.45) 100%),
+    linear-gradient(160deg, #f6e0b0 0%, #ecc888 50%, #dbac6a 100%);
+  border-radius: 2px;
+  clip-path: polygon(
+    1% 0.6%, 6% 0%, 14% 0.8%, 22% 0.2%, 30% 0.7%, 38% 0.1%, 46% 0.5%,
+    54% 0%, 62% 0.6%, 70% 0.2%, 78% 0.8%, 86% 0.1%, 94% 0.6%, 99% 0.2%,
+    99.6% 5%, 99.2% 12%, 99.7% 20%, 99% 28%, 99.6% 36%, 99% 44%,
+    99.5% 52%, 99% 60%, 99.6% 68%, 99% 76%, 99.5% 84%, 99% 92%, 99.4% 99%,
+    94% 99.5%, 86% 99%, 78% 99.6%, 70% 99.1%, 62% 99.7%, 54% 99.2%, 46% 99.8%,
+    38% 99.3%, 30% 99.7%, 22% 99.2%, 14% 99.8%, 6% 99.3%, 1% 99.5%,
+    0.4% 92%, 0.8% 84%, 0.3% 76%, 0.9% 68%, 0.4% 60%, 0.9% 52%,
+    0.3% 44%, 0.8% 36%, 0.3% 28%, 0.9% 20%, 0.4% 12%, 0.8% 5%
+  );
   box-shadow:
-    0 30px 60px rgba(80, 40, 10, 0.4),
-    inset 0 0 60px rgba(140, 90, 40, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  transform: rotate(-0.6deg);
+    0 36px 70px rgba(60, 25, 5, 0.55),
+    0 10px 24px rgba(80, 40, 10, 0.35),
+    inset 0 0 80px rgba(140, 80, 30, 0.30),
+    inset 0 1px 0 rgba(255, 240, 200, 0.55);
+  transform: rotate(-0.7deg);
 }
 .letter-paper-real::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 14px;
+  border: 1px solid rgba(180, 130, 60, 0.32);
+  border-radius: 2px;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(120, 70, 30, 0.18) 100%);
-  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(255, 240, 200, 0.35);
+}
+.letter-paper-real::after {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, transparent 14px, rgba(161, 123, 58, 0.55) 14px 15px, transparent 15.5px) top left / 28px 28px no-repeat,
+    linear-gradient(45deg, transparent 14px, rgba(161, 123, 58, 0.55) 14px 15px, transparent 15.5px) bottom left / 28px 28px no-repeat,
+    linear-gradient(135deg, transparent 14px, rgba(161, 123, 58, 0.55) 14px 15px, transparent 15.5px) bottom right / 28px 28px no-repeat;
 }
 .real-hand-photo {
   position: absolute;
@@ -1426,15 +1464,19 @@ body::after {
 }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* Handwriting canvas */
+/* Handwriting canvas — scrollable but no visible scrollbar */
 .hw-scroll {
   width: 100%;
   max-height: 60vh;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 8px 0;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+.hw-scroll::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .hw-canvas { width: 100%; overflow: hidden; }
 .hw-canvas svg { max-width: 100%; height: auto; }
 .hw-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
@@ -1981,6 +2023,53 @@ body::after {
   color: #fff7ec;
   border-color: rgba(255, 247, 232, 0.4);
   box-shadow: 0 14px 30px rgba(161, 123, 58, 0.5);
+}
+
+/* Matching back & continue buttons — identical luxury cream-amber pill */
+.nav-back-top,
+.nav-continue {
+  position: fixed;
+  bottom: 32px;
+  left: 32px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 26px 15px 30px;
+  border: 1px solid rgba(255, 247, 232, 0.4);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f6c89a 0%, #d99a72 50%, #a86850 100%);
+  color: #fff8ec;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.18rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow:
+    0 18px 40px rgba(180, 90, 60, 0.5),
+    0 0 0 1px rgba(255, 200, 170, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(100, 40, 20, 0.25);
+  transition: box-shadow 0.3s ease;
+}
+.nav-back-top:hover,
+.nav-continue:hover {
+  box-shadow:
+    0 22px 50px rgba(180, 90, 60, 0.65),
+    0 0 50px rgba(255, 180, 140, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 0 rgba(100, 40, 20, 0.3);
+}
+.nav-back-top svg,
+.nav-continue svg {
+  filter: drop-shadow(0 1px 2px rgba(100, 40, 20, 0.4));
+}
+@media (max-width: 640px) {
+  .nav-back-top,
+  .nav-continue { bottom: 18px; left: 18px; padding: 13px 22px 13px 26px; font-size: 1.05rem; }
+  .nav-back-top svg,
+  .nav-continue svg { width: 18px; height: 18px; }
 }
 
 .mute-btn {

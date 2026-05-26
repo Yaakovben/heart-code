@@ -36,6 +36,61 @@ function loadFont(): Promise<opentype.Font> {
 }
 
 // ---------- helpers ----------
+// Strip the decorative "baseline tags" some Hebrew fonts (like anka.ttf)
+// embed in every glyph. Without this, adjacent letters' tags visually merge
+// into a continuous horizontal bar under whole words.
+function cleanPathData(path: opentype.Path, fontSize: number): string {
+  const cmds: any[] = (path as any).commands ?? [];
+  if (cmds.length === 0) return path.toPathData(2);
+
+  // Split into sub-paths (each starting with "M").
+  const subs: any[][] = [];
+  let cur: any[] = [];
+  for (const c of cmds) {
+    if (c.type === "M" && cur.length > 0) { subs.push(cur); cur = []; }
+    cur.push(c);
+  }
+  if (cur.length > 0) subs.push(cur);
+
+  const kept: any[][] = [];
+  for (const sp of subs) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const c of sp) {
+      const pts: Array<[number | undefined, number | undefined]> = [
+        [c.x, c.y], [c.x1, c.y1], [c.x2, c.y2],
+      ];
+      for (const [px, py] of pts) {
+        if (px !== undefined) { if (px < minX) minX = px; if (px > maxX) maxX = px; }
+        if (py !== undefined) { if (py < minY) minY = py; if (py > maxY) maxY = py; }
+      }
+    }
+    const w = maxX - minX;
+    const h = maxY - minY;
+    const centerY = (minY + maxY) / 2;
+    // Bar if: thin shape sitting at/near the baseline (y ≈ 0).
+    // Detects both tiny per-letter tags AND wider connecting bars.
+    const isBar =
+      h < fontSize * 0.12 &&
+      Math.abs(centerY) < fontSize * 0.08 &&
+      w > 0;
+    if (!isBar) kept.push(sp);
+  }
+
+  let d = "";
+  for (const sp of kept) {
+    for (const c of sp) {
+      switch (c.type) {
+        case "M": d += `M${c.x} ${c.y}`; break;
+        case "L": d += `L${c.x} ${c.y}`; break;
+        case "C": d += `C${c.x1} ${c.y1} ${c.x2} ${c.y2} ${c.x} ${c.y}`; break;
+        case "Q": d += `Q${c.x1} ${c.y1} ${c.x} ${c.y}`; break;
+        case "Z": d += "Z"; break;
+      }
+    }
+  }
+  return d || path.toPathData(2);
+}
+
 function textToPaths(font: opentype.Font, text: string, fontSize: number): Line {
   const scale = fontSize / font.unitsPerEm;
   const glyphs = font.stringToGlyphs(text);
@@ -46,7 +101,7 @@ function textToPaths(font: opentype.Font, text: string, fontSize: number): Line 
     const path = g.getPath(0, 0, fontSize);
     const advance = (g.advanceWidth ?? 0) * scale;
     out.push({
-      d: path.toPathData(2),
+      d: cleanPathData(path, fontSize),
       x,
       advance,
       isSpace: text[i] === " ",
