@@ -9,19 +9,18 @@ export default function IdGateScene({ onUnlock }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const [step, setStep] = useState(0);
 
   // Unlock audio on the first real user gesture. Browser policy requires it,
   // otherwise the AudioContext stays suspended and playSent() is silent.
   useEffect(() => {
-    const handler = () => unlockAudio();
     const evs = ["pointerdown", "touchstart", "click", "keydown"];
-    evs.forEach((ev) => window.addEventListener(ev, handler, { passive: true }));
-    return () => evs.forEach((ev) => window.removeEventListener(ev, handler));
+    evs.forEach((ev) => window.addEventListener(ev, unlockAudio, { passive: true }));
+    return () => evs.forEach((ev) => window.removeEventListener(ev, unlockAudio));
   }, []);
 
   // Auto-paced reveal. Never blocks on audio — if the first "sent" sound is
   // skipped on cold refresh (no interaction yet), all subsequent ones still play.
-  const [step, setStep] = useState(0);
   useEffect(() => {
     const times = [900, 1100, 1500, 1200];
     if (step >= times.length) return;
@@ -57,10 +56,6 @@ export default function IdGateScene({ onUnlock }) {
       playError();
       setTimeout(() => setError(false), 1500);
     }
-  };
-
-  const onTypeChange = (e) => {
-    setValue(e.target.value);
   };
 
   return (
@@ -202,7 +197,7 @@ export default function IdGateScene({ onUnlock }) {
                     maxLength={20}
                     placeholder="התשובה שלי..."
                     value={value}
-                    onChange={onTypeChange}
+                    onChange={(e) => setValue(e.target.value)}
                     className="chat2-input"
                     autoFocus
                     aria-label="התשובה של יעקב"

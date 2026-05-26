@@ -563,21 +563,23 @@ body::after {
 
 .chat2-send-wa {
   flex: 0 0 auto;
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  background: linear-gradient(135deg, #2dd479 0%, #128c7e 100%);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: linear-gradient(135deg, #34e88a 0%, #15a08e 100%);
   color: #fff;
   cursor: pointer;
   display: grid;
   place-items: center;
   transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
   box-shadow:
-    0 6px 18px rgba(18, 140, 126, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  margin-inline-start: 6px;
+    0 8px 22px rgba(18, 140, 126, 0.7),
+    0 0 30px rgba(45, 212, 121, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  margin-inline-start: 8px;
 }
+.chat2-send-wa svg { width: 24px; height: 24px; }
 .chat2-send-wa svg {
   transform: scaleX(-1) translateX(1px);
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
@@ -1335,6 +1337,21 @@ body::after {
   letter-spacing: 0.02em;
   z-index: 5;
 }
+.letter-verse {
+  font-family: "Frank Ruhl Libre", "David Libre", serif;
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(0.78rem, 2.4vw, 1.05rem);
+  color: rgba(80, 40, 10, 0.85);
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: 0;
+  margin: -18px auto 18px;
+  padding: 0 6px;
+  position: relative;
+  max-width: 96%;
+  white-space: nowrap;
+}
 .letter-monogram {
   font-family: "Cormorant Garamond", serif;
   font-style: italic;
@@ -1492,10 +1509,10 @@ body::after {
    RESPONSIVE — phones, small tablets
    ============================================================ */
 @media (max-width: 640px) {
-  .app-shell { padding: 12px 8px; }
-  .letter-stage-real { width: 100%; }
+  .app-shell { padding: 24px 18px; }
+  .letter-stage-real { width: 96%; }
   .letter-paper-real {
-    padding: 28px 12px 50px;
+    padding: 36px 18px 56px;
     border-radius: 2px;
   }
   .letter-paper-real::after { inset: 12px 6px 16px 6px; }
@@ -1505,10 +1522,11 @@ body::after {
   .bottom-nav { bottom: 14px; gap: 8px; }
   .nav-btn { padding: 11px 22px; font-size: 0.86rem; letter-spacing: 0.14em; }
   .mute-btn { top: 12px; right: 12px; width: 38px; height: 38px; }
-  /* Chat gate */
-  .chat-window2 { padding: 16px 12px 14px; border-radius: 16px; max-width: 96vw; }
+  /* Chat gate — breathing room around the window */
+  .chat-window2 { padding: 18px 14px 16px; border-radius: 20px; max-width: 90vw; margin: 12px 4px; }
   .chat2-bubble-input { width: 100%; min-width: 0; padding: 4px 4px 4px 10px; }
-  .chat2-send-wa { width: 40px; height: 40px; }
+  .chat2-send-wa { width: 48px; height: 48px; }
+  .chat2-send-wa svg { width: 22px; height: 22px; }
   .chat2-input { font-size: 1rem; padding: 6px 0; }
   .chat2-bubble { font-size: 0.95rem; padding: 8px 12px; }
   .chat2-bubble-typing { padding: 10px 14px; }
@@ -1519,8 +1537,8 @@ body::after {
   .letter-monogram { margin-bottom: 8px; font-size: 0.85rem; }
   .nav-btn { padding: 10px 18px; font-size: 0.8rem; }
   .chat-window2 { padding: 14px 10px 12px; }
-  .chat2-send-wa { width: 36px; height: 36px; }
-  .chat2-send-wa svg { width: 18px; height: 18px; }
+  .chat2-send-wa { width: 46px; height: 46px; }
+  .chat2-send-wa svg { width: 22px; height: 22px; }
   .chat2-bubble-input { padding: 3px 4px 3px 8px; gap: 4px; }
   .chat2-input { font-size: 0.95rem; }
 }
@@ -1552,7 +1570,7 @@ body::after {
 .scene.v3 {
   position: relative;
   width: 100%;
-  max-width: 460px;
+  max-width: 580px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1570,70 +1588,102 @@ body::after {
   will-change: transform;
 }
 .v3-aura-1 {
-  width: 70%;
-  aspect-ratio: 1;
-  top: 10%;
-  left: -20%;
-  background: radial-gradient(circle, #ff8aa8 0%, transparent 70%);
-  animation: v3Float1 12s ease-in-out infinite alternate;
-}
-.v3-aura-2 {
-  width: 65%;
-  aspect-ratio: 1;
-  top: 35%;
-  right: -25%;
-  background: radial-gradient(circle, #c88aff 0%, transparent 70%);
-  animation: v3Float2 14s ease-in-out infinite alternate;
-}
-.v3-aura-3 {
   width: 80%;
   aspect-ratio: 1;
-  bottom: -10%;
-  left: 10%;
-  background: radial-gradient(circle, #ffb672 0%, transparent 70%);
+  top: 5%;
+  left: -25%;
+  background: radial-gradient(circle, #ff6a96 0%, transparent 70%);
+  animation: v3Float1 12s ease-in-out infinite alternate;
+  opacity: 0.7;
+}
+.v3-aura-2 {
+  width: 75%;
+  aspect-ratio: 1;
+  top: 30%;
+  right: -30%;
+  background: radial-gradient(circle, #ff9aae 0%, transparent 70%);
+  animation: v3Float2 14s ease-in-out infinite alternate;
+  opacity: 0.7;
+}
+.v3-aura-3 {
+  width: 90%;
+  aspect-ratio: 1;
+  bottom: -15%;
+  left: 5%;
+  background: radial-gradient(circle, #ffb89a 0%, transparent 70%);
   animation: v3Float1 16s ease-in-out infinite alternate;
+  opacity: 0.6;
 }
 @keyframes v3Float1 { from { transform: translate(0,0); } to { transform: translate(30px, -20px); } }
 @keyframes v3Float2 { from { transform: translate(0,0); } to { transform: translate(-30px, 25px); } }
 
 .v3-overline {
-  font-family: "Inter", system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 0.72rem;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: rgba(251, 238, 211, 0.55);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(0.85rem, 2.6vw, 1rem);
+  letter-spacing: 0.06em;
+  color: rgba(255, 200, 210, 0.92);
   margin-bottom: 8px;
+}
+.v3-overline-heart {
+  color: #ff7a9a;
+  font-size: 1rem;
+  text-shadow: 0 0 12px rgba(255, 120, 150, 0.7);
 }
 .v3-title {
   font-family: "Heebo", "Inter", sans-serif;
   font-weight: 800;
-  font-size: clamp(2.6rem, 9vw, 3.4rem);
+  font-size: clamp(2.8rem, 10vw, 4rem);
   letter-spacing: -0.025em;
   line-height: 1;
-  margin: 0 0 26px;
-  background: linear-gradient(180deg, #fff7ec 0%, #f5d4dc 60%, #c89aff 100%);
+  margin: 0 0 30px;
+  background: linear-gradient(180deg, #fff7ec 0%, #ffc4d2 55%, #ff7aa6 100%);
   -webkit-background-clip: text;
           background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 4px 30px rgba(255, 120, 160, 0.35);
+}
+.v3-title > span {
+  -webkit-text-fill-color: initial;
+  background: none;
+}
+
+/* Hearts flying upward — full-viewport */
+.v3-hearts {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.v3-heart-svg {
+  position: absolute;
+  bottom: 0;
+  filter: drop-shadow(0 3px 8px rgba(255, 80, 130, 0.45))
+          drop-shadow(0 0 12px rgba(255, 140, 170, 0.35));
+  will-change: transform, opacity;
 }
 
 .v3-frame {
   position: relative;
   width: 100%;
-  border-radius: 28px;
+  border-radius: 32px;
   overflow: hidden;
   background: #000;
   aspect-ratio: 9/16;
-  max-height: 64vh;
+  max-height: 72vh;
   box-shadow:
-    0 30px 60px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 80px rgba(200, 138, 255, 0.18);
+    0 36px 80px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 200, 220, 0.25),
+    0 0 60px rgba(255, 120, 160, 0.35),
+    0 0 120px rgba(255, 140, 180, 0.2);
 }
 @media (min-aspect-ratio: 3/4) {
-  .v3-frame { aspect-ratio: 16/9; max-height: 62vh; }
+  .v3-frame { aspect-ratio: 16/9; max-height: 68vh; }
 }
 .v3-frame video {
   width: 100%;
@@ -1702,18 +1752,22 @@ body::after {
   gap: 4px;
 }
 .v3-track-title {
-  font-family: "Heebo", "Inter", sans-serif;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: -0.01em;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.1rem, 3.4vw, 1.3rem);
+  color: #fff7ec;
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 12px rgba(255, 120, 160, 0.4);
 }
 .v3-track-sub {
-  font-family: "Heebo", sans-serif;
-  font-size: 0.85rem;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 0.95rem;
   font-weight: 400;
-  color: rgba(251, 238, 211, 0.55);
-  letter-spacing: 0.02em;
+  color: rgba(255, 200, 210, 0.75);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
 }
 
 /* ============================================================

@@ -132,7 +132,9 @@ export default function LetterScene() {
       >
         <div className="letter-paper-real">
           <span className="letter-bsd">בס״ד</span>
-          <div className="letter-monogram">~ ❦ ~</div>
+          <div className="letter-verse">
+            "רַבּוֹת בָּנוֹת עָשׂוּ חָיִל, וְאַתְּ עָלִית עַל־כֻּלָּנָה"
+          </div>
           <div className="hw-scroll">
             <HandwritingCanvas
               lines={lines}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import * as opentype from "opentype.js";
-import ankaFontUrl from "../assets/fonts/anka.ttf?url";
+import ankaFontUrl from "../assets/fonts/alef.ttf?url";
 import handPenUrl from "../assets/hand-pen.png";
 
 // ---------- types ----------
