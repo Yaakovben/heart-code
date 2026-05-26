@@ -152,6 +152,7 @@ export default function HandwritingCanvas({
   const [activeLineIdx, setActiveLineIdx] = useState(0);
   const [activeGlyphIdx, setActiveGlyphIdx] = useState(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const userScrolledRef = useRef(false);
 
   // Load font once.
   useEffect(() => {
@@ -171,8 +172,28 @@ export default function HandwritingCanvas({
     return () => window.removeEventListener("resize", rebuild);
   }, [font, lines, fontSize]);
 
-  // Keep the active line + hand area above the bottom fade.
+  // Detect manual scroll once — and stop auto-following after that, so the
+  // reader can scroll back to re-read without the pen yanking them forward.
   useEffect(() => {
+    const scroller =
+      containerRef.current?.closest<HTMLElement>(".hw-scroll") ??
+      (containerRef.current?.parentElement as HTMLElement | null);
+    if (!scroller) return;
+    const markUserScroll = () => { userScrolledRef.current = true; };
+    scroller.addEventListener("wheel", markUserScroll, { passive: true });
+    scroller.addEventListener("touchmove", markUserScroll, { passive: true });
+    scroller.addEventListener("keydown", markUserScroll);
+    return () => {
+      scroller.removeEventListener("wheel", markUserScroll);
+      scroller.removeEventListener("touchmove", markUserScroll);
+      scroller.removeEventListener("keydown", markUserScroll);
+    };
+  }, []);
+
+  // Keep the active line + hand area above the bottom fade — unless the user
+  // has taken over scrolling.
+  useEffect(() => {
+    if (userScrolledRef.current) return;
     const scroller =
       containerRef.current?.closest<HTMLElement>(".hw-scroll") ??
       (containerRef.current?.parentElement as HTMLElement | null);
