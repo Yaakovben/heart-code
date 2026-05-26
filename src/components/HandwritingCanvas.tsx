@@ -183,15 +183,17 @@ export default function HandwritingCanvas({
       style={{ position: "relative", width: "100%", minHeight: totalHeight + 40 }}
     >
       <svg
-        width={svgW}
-        height={totalHeight + fontSize * 2}
+        width="100%"
         viewBox={`0 0 ${svgW} ${totalHeight + fontSize * 2}`}
+        preserveAspectRatio="xMidYMin meet"
         style={{
           overflow: "visible",
           direction: "ltr",
           display: "block",
           position: "relative",
           zIndex: 1,
+          maxWidth: "100%",
+          height: "auto",
         }}
       >
         {lineData.map((line, li) => {

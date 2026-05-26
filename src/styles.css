@@ -1374,16 +1374,15 @@ body::after {
 /* Real photo letter stage */
 .letter-stage-real {
   position: relative;
-  width: min(96vw, 780px);
+  width: min(96vw, 560px);
   display: flex;
   justify-content: center;
 }
 .letter-paper-real {
   position: relative;
   width: 100%;
-  min-height: 82vh;
-  padding: 56px 4px 100px;
-  overflow: visible;
+  padding: 40px 18px 60px;
+  overflow: hidden;
   background-color: #fbf3e0;
   background-image:
     url("https://www.transparenttextures.com/patterns/cream-paper.png"),
@@ -1429,14 +1428,15 @@ body::after {
 
 /* Handwriting canvas */
 .hw-scroll {
-  max-height: 68vh;
+  width: 100%;
+  max-height: 60vh;
   overflow: hidden;
   padding: 8px 0;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 78%, transparent 100%);
-          mask-image: linear-gradient(to bottom, #000 0%, #000 78%, transparent 100%);
 }
+.hw-canvas { width: 100%; overflow: hidden; }
+.hw-canvas svg { max-width: 100%; height: auto; }
 .hw-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .hw-loading {
   font-family: "Assistant", sans-serif;
@@ -1453,27 +1453,39 @@ body::after {
   .app-shell { padding: 12px 8px; }
   .letter-stage-real { width: 100%; }
   .letter-paper-real {
-    min-height: 88vh;
-    padding: 36px 6px 70px;
+    padding: 28px 12px 50px;
     border-radius: 2px;
   }
   .letter-paper-real::after { inset: 12px 6px 16px 6px; }
   .letter-monogram { font-size: 0.95rem; letter-spacing: 0.2em; }
-  .hw-scroll { max-height: 76vh; }
+  .hw-scroll { max-height: 56vh; }
+  .real-hand-photo { width: 60%; right: -30px; bottom: -20px; }
   .bottom-nav { bottom: 14px; gap: 8px; }
   .nav-btn { padding: 11px 22px; font-size: 0.86rem; letter-spacing: 0.14em; }
   .mute-btn { top: 12px; right: 12px; width: 38px; height: 38px; }
+  /* Chat gate */
+  .chat-window2 { padding: 16px 12px 14px; border-radius: 16px; max-width: 96vw; }
+  .chat2-bubble-input { width: 100%; min-width: 0; padding: 4px 4px 4px 10px; }
+  .chat2-send-wa { width: 40px; height: 40px; }
+  .chat2-input { font-size: 1rem; padding: 6px 0; }
+  .chat2-bubble { font-size: 0.95rem; padding: 8px 12px; }
+  .chat2-bubble-typing { padding: 10px 14px; }
 }
 
 @media (max-width: 420px) {
-  .letter-paper-real { padding: 28px 4px 60px; }
+  .letter-paper-real { padding: 22px 10px 44px; }
   .letter-monogram { margin-bottom: 8px; font-size: 0.85rem; }
   .nav-btn { padding: 10px 18px; font-size: 0.8rem; }
+  .chat-window2 { padding: 14px 10px 12px; }
+  .chat2-send-wa { width: 36px; height: 36px; }
+  .chat2-send-wa svg { width: 18px; height: 18px; }
+  .chat2-bubble-input { padding: 3px 4px 3px 8px; gap: 4px; }
+  .chat2-input { font-size: 0.95rem; }
 }
 
 @media (max-height: 620px) {
-  .letter-paper-real { min-height: 96vh; padding-top: 24px; padding-bottom: 56px; }
-  .hw-scroll { max-height: 80vh; }
+  .letter-paper-real { padding: 20px 12px 40px; }
+  .hw-scroll { max-height: 64vh; }
 }
 
 /* Pen following text */

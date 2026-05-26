@@ -41,15 +41,17 @@ export default function App() {
 
       {stage !== "gate" && (
         <>
-          <motion.button
-            className="mute-btn"
-            onClick={() => setMuted((m) => !m)}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            title={muted ? "השמע" : "השתק"}
-          >
-            {muted ? "🔇" : "♪"}
-          </motion.button>
+          {stage !== "video" && (
+            <motion.button
+              className="mute-btn"
+              onClick={() => setMuted((m) => !m)}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              title={muted ? "השמע" : "השתק"}
+            >
+              {muted ? "🔇" : "♪"}
+            </motion.button>
+          )}
 
           <motion.nav
             className="bottom-nav"

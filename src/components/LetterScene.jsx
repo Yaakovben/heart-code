@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { Howl } from "howler";
 import message from "../data/message.txt?raw";
+import writingSoundUrl from "../assets/writing.mp3";
 import HandwritingCanvas from "./HandwritingCanvas";
 
 const lines = message
@@ -8,71 +10,89 @@ const lines = message
   .map((l) => l.trim())
   .filter(Boolean);
 
-// Soft writing sound — fountain pen on paper, gentle and warm.
+// Gentle writing sound: real pencil-on-paper MP3, but routed through a heavy
+// lowpass filter so any click/tap-like high frequencies (footstep-ish noises)
+// are stripped out — what's left is a soft warm scrape.
 function useQuillTicker(active) {
   const ctxRef = useRef(null);
-  const bufRef = useRef(null);
-  const idRef = useRef(null);
+  const bufferRef = useRef(null);
+  const sourceRef = useRef(null);
+  const gainRef = useRef(null);
+
+  // Load once.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const res = await fetch(writingSoundUrl);
+        const arr = await res.arrayBuffer();
+        const decoded = await ctx.decodeAudioData(arr);
+        if (cancelled) return;
+        ctxRef.current = ctx;
+        bufferRef.current = decoded;
+      } catch (e) {
+        console.error("writing sound load fail", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
-    if (!active) {
-      if (idRef.current) clearTimeout(idRef.current);
-      idRef.current = null;
-      return;
+    const ctx = ctxRef.current;
+    const buf = bufferRef.current;
+    if (!ctx || !buf) return;
+
+    if (active) {
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      if (sourceRef.current) return; // already playing
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+
+      // Strong lowpass — removes click/tap/heel-like attacks; leaves soft scrape.
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 900;
+      lp.Q.value = 0.5;
+
+      // High-shelf cut to further tame any leftover brightness.
+      const hs = ctx.createBiquadFilter();
+      hs.type = "highshelf";
+      hs.frequency.value = 1500;
+      hs.gain.value = -18;
+
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      src.connect(lp).connect(hs).connect(gain).connect(ctx.destination);
+      src.start();
+
+      // Fade in.
+      const now = ctx.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + 0.6);
+
+      sourceRef.current = src;
+      gainRef.current = gain;
+    } else if (sourceRef.current) {
+      // Fade out then stop.
+      const now = ctx.currentTime;
+      const gain = gainRef.current;
+      if (gain) {
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(gain.gain.value || 0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+      }
+      const src = sourceRef.current;
+      sourceRef.current = null;
+      setTimeout(() => { try { src.stop(); } catch {} }, 900);
     }
-    const play = () => {
-      try {
-        if (!ctxRef.current) {
-          ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-          const ctx = ctxRef.current;
-          // Brown-noise-ish buffer (low frequencies only) — feels like cloth/paper rustle.
-          const len = ctx.sampleRate * 1.2;
-          const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-          const data = buf.getChannelData(0);
-          let last = 0;
-          for (let i = 0; i < len; i++) {
-            const white = Math.random() * 2 - 1;
-            last = (last + 0.02 * white) / 1.02;
-            data[i] = last * 3.0;
-          }
-          bufRef.current = buf;
-        }
-        const ctx = ctxRef.current;
-        const now = ctx.currentTime;
-        const src = ctx.createBufferSource();
-        src.buffer = bufRef.current;
-        // Long soft swish (200-400ms) — pen gliding across paper.
-        const swishDur = 0.22 + Math.random() * 0.18;
-        src.start(now, Math.random() * 0.8, swishDur);
-
-        // Very dark filter — only the soft low rumble passes.
-        const lp = ctx.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.value = 900;
-        lp.Q.value = 0.4;
-
-        // Subtle "shape" — slight bandpass around 500Hz for paper texture.
-        const bp = ctx.createBiquadFilter();
-        bp.type = "bandpass";
-        bp.frequency.value = 480 + Math.random() * 120;
-        bp.Q.value = 0.5;
-
-        const gain = ctx.createGain();
-        // Smooth attack/decay — never harsh, never punchy.
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.006, now + swishDur * 0.35);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + swishDur);
-        src.connect(bp).connect(lp).connect(gain).connect(ctx.destination);
-      } catch {}
-      // Long gentle pauses between swishes — like writing real sentences.
-      const next = 320 + Math.random() * 280;
-      idRef.current = setTimeout(play, next);
-    };
-    idRef.current = setTimeout(play, 250);
-    return () => {
-      if (idRef.current) clearTimeout(idRef.current);
-    };
   }, [active]);
+
+  useEffect(() => () => {
+    try { sourceRef.current?.stop(); } catch {}
+    ctxRef.current?.close().catch(() => {});
+  }, []);
 }
 
 function useViewportSize() {
