@@ -17,45 +17,48 @@ export default function App() {
     fetch(new URL("./assets/fonts/gveret.ttf", import.meta.url).href).catch(() => {});
   }, []);
 
-  // Create the Howl immediately at app mount. The 5MB MP3 starts downloading
-  // and decoding while the reader is still in the gate scene — by the time
-  // they unlock, the audio is ready and play() is instant (no startup delay).
-  // We don't call play() here; iOS would block it without a user gesture.
+  // Warm the MP3 in the browser cache from the very first paint, so decoding
+  // is already done by the time we hit play().
   useEffect(() => {
-    if (soundRef.current) return;
-    soundRef.current = new Howl({
-      src: [localMusicUrl],
-      loop: true,
-      volume: 0,
-      html5: false,
-      preload: true,
-    });
+    fetch(localMusicUrl).catch(() => {});
   }, []);
 
-  // Resume Howler's AudioContext on the very first user interaction. Without
-  // this, ctx stays suspended (Howl was created before any gesture) and the
-  // delayed play() inside the gate submit's setTimeout falls outside the
-  // gesture window — iOS silently blocks playback.
+  // Create the Howl and start it (silently, volume:0) on the FIRST user
+  // gesture — typing in the gate, tapping, anything. This guarantees:
+  //   1. Howler's AudioContext is created inside a gesture window (required
+  //      by iOS), so subsequent play() / resume() calls work even if they
+  //      fire later from a setTimeout.
+  //   2. The audio source is already streaming by the time the letter scene
+  //      mounts, so the fade-up is instant — no startup delay.
   useEffect(() => {
-    const unlock = () => {
-      const ctx = Howler.ctx;
-      if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+    let armed = true;
+    const initAudio = () => {
+      if (!armed || soundRef.current) return;
+      armed = false;
+      const s = new Howl({
+        src: [localMusicUrl],
+        loop: true,
+        volume: 0,
+        html5: false,
+      });
+      soundRef.current = s;
+      s.play();
     };
     const evs = ["pointerdown", "touchstart", "click", "keydown"];
-    evs.forEach((ev) => window.addEventListener(ev, unlock, { passive: true }));
-    return () => evs.forEach((ev) => window.removeEventListener(ev, unlock));
+    evs.forEach((ev) => window.addEventListener(ev, initAudio, { passive: true, once: false }));
+    return () => evs.forEach((ev) => window.removeEventListener(ev, initAudio));
   }, []);
 
-  // Volume / start logic — runs every time stage or muted changes.
+  // Volume logic — runs every time stage or muted changes. NEVER calls
+  // play() here: initAudio (gesture) starts the single sound, onShow
+  // (visibility) resumes it. Calling play() again from here spawns a parallel
+  // sound instance in Howler — the "old song + new song" doubling the user
+  // reported when navigating video → letter.
   useEffect(() => {
     if (stage === "gate") return;
     const s = soundRef.current;
     if (!s) return;
-    if (!s.playing()) s.play();
     s.mute(muted);
-    // Do NOT call play() here again. The init block above started it once and
-    // loop:true keeps it alive across stages. A second play() spawns a parallel
-    // playback instance in Howler — what the user heard as "doubled music".
     const target = stage === "video" ? 0 : 0.4;
     const cur = s.volume();
     // Skip the fade entirely when we're already at target — otherwise a re-render
