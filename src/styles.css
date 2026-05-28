@@ -1420,6 +1420,12 @@ body::after {
   z-index: 4;
   opacity: 0.95;
 }
+.letter-flourish-hand {
+  position: absolute;
+  pointer-events: none;
+  z-index: 11;
+  will-change: transform;
+}
 
 /* Subtle "tap to begin" hint — only visible until the user taps once. */
 .gate-tap-hint {

@@ -143,8 +143,9 @@ function useViewportSize() {
 
 export default function LetterScene({ muted = false }) {
   const [done, setDone] = useState(false);
-  const [handPos, setHandPos] = useState({ x: 10, y: 22, visible: false });
+  const [handPos, setHandPos] = useState({ x: 0, y: 0, visible: false });
   const flourishPathRef = useRef(null);
+  const flourishSvgRef = useRef(null);
   // Writing sound only plays when the music is muted — otherwise it would
   // layer over the background track and feel noisy.
   useQuillTicker(!done && muted);
@@ -170,8 +171,16 @@ export default function LetterScene({ muted = false }) {
       }
       const totalLen = path.getTotalLength();
       const progress = Math.min(1, (elapsed - FLOURISH_DELAY_MS) / FLOURISH_DURATION_MS);
-      const point = path.getPointAtLength(progress * totalLen);
-      setHandPos({ x: point.x, y: point.y, visible: progress < 1 });
+      const svgPoint = path.getPointAtLength(progress * totalLen);
+      // Map SVG-coord point → pixel position relative to the overlay container.
+      const svg = flourishSvgRef.current;
+      const rect = svg?.getBoundingClientRect();
+      const parentRect = svg?.parentElement?.getBoundingClientRect();
+      if (rect && parentRect) {
+        const px = rect.left - parentRect.left + (svgPoint.x / 108) * rect.width;
+        const py = rect.top - parentRect.top + (svgPoint.y / 38) * rect.height;
+        setHandPos({ x: px, y: py, visible: progress < 1 });
+      }
       if (progress < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -186,16 +195,16 @@ export default function LetterScene({ muted = false }) {
   return (
     <motion.section
       className="scene"
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
       <motion.div
         className="letter-stage-real"
-        initial={{ scale: 0.94, opacity: 0 }}
+        initial={{ scale: 0.97, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="letter-paper-real">
           <div className="letter-scroll">
@@ -215,37 +224,61 @@ export default function LetterScene({ muted = false }) {
               {/* Flourish: small loop under ב, then a long sweep right under
                   "יעקב" — like the red sketch the user drew. */}
               {done && (
-                <motion.svg
-                  className="letter-flourish-overlay"
-                  viewBox="0 0 108 38"
-                  aria-hidden
-                  preserveAspectRatio="none"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.15 }}
-                >
-                  <motion.path
-                    ref={flourishPathRef}
-                    d={FLOURISH_D}
-                    fill="none"
-                    stroke="#1a0e08"
-                    strokeWidth="1.05"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ delay: 0.15, duration: 0.85, ease: [0.5, 0, 0.3, 1] }}
-                  />
-                  {handPos.visible && (
-                    <image
-                      href={handPenUrl}
-                      width="22"
-                      x={handPos.x - 3}
-                      y={handPos.y - 18}
-                      style={{ pointerEvents: "none" }}
+                <>
+                  <motion.svg
+                    ref={flourishSvgRef}
+                    className="letter-flourish-overlay"
+                    viewBox="0 0 108 38"
+                    aria-hidden
+                    preserveAspectRatio="none"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.15 }}
+                  >
+                    <motion.path
+                      ref={flourishPathRef}
+                      d={FLOURISH_D}
+                      fill="none"
+                      stroke="#1a0e08"
+                      strokeWidth="1.05"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ delay: 0.15, duration: 0.85, ease: [0.5, 0, 0.3, 1] }}
                     />
+                  </motion.svg>
+                  {handPos.visible && (
+                    <div
+                      className="letter-flourish-hand"
+                      style={{
+                        left: `${handPos.x}px`,
+                        top: `${handPos.y}px`,
+                      }}
+                    >
+                      <img
+                        src={handPenUrl}
+                        alt=""
+                        draggable={false}
+                        style={{
+                          width: `${handWidth}px`,
+                          height: "auto",
+                          display: "block",
+                          transformOrigin: "12px 10px",
+                          transform: "translate(-10px, -8px) rotate(-10deg)",
+                          filter: "sepia(0.14) saturate(0.95) contrast(1.04) brightness(1.02)",
+                          imageRendering: "auto",
+                          WebkitMaskImage:
+                            "linear-gradient(125deg, #000 0%, #000 78%, rgba(0,0,0,0.55) 90%, transparent 100%)",
+                          maskImage:
+                            "linear-gradient(125deg, #000 0%, #000 78%, rgba(0,0,0,0.55) 90%, transparent 100%)",
+                          userSelect: "none",
+                          pointerEvents: "none",
+                        }}
+                      />
+                    </div>
                   )}
-                </motion.svg>
+                </>
               )}
             </div>
           </div>

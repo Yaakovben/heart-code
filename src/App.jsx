@@ -6,15 +6,19 @@ import LetterScene from "./components/LetterScene";
 import VideoScene from "./components/VideoScene";
 import Particles from "./components/Particles";
 import { localMusicUrl, localVideoUrl } from "./lib/demoAssets";
+import { loadFont } from "./components/HandwritingCanvas";
 
 export default function App() {
   const [stage, setStage] = useState("gate");
   const [muted, setMuted] = useState(false);
   const soundRef = useRef(null);
 
-  // Warm the handwriting-font cache early so the letter scene mounts instantly.
+  // Fully parse the handwriting font during the gate, not on letter mount.
+  // loadFont() is a singleton in HandwritingCanvas — fetching here populates
+  // the cached promise so HandwritingCanvas sees the font as already-loaded
+  // and starts the reveal animation instantly.
   useEffect(() => {
-    fetch(new URL("./assets/fonts/gveret.ttf", import.meta.url).href).catch(() => {});
+    loadFont().catch(() => {});
   }, []);
 
   // Warm the MP3 + video in the browser cache from the very first paint, so

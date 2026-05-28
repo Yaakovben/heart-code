@@ -28,7 +28,7 @@ type Props = {
 
 // ---------- font loading (cached) ----------
 let fontPromise: Promise<opentype.Font> | null = null;
-function loadFont(): Promise<opentype.Font> {
+export function loadFont(): Promise<opentype.Font> {
   if (!fontPromise) {
     fontPromise = fetch(ankaFontUrl)
       .then((r) => r.arrayBuffer())
