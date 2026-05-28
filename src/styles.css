@@ -1420,6 +1420,22 @@ body::after {
   z-index: 4;
   opacity: 0.95;
 }
+
+/* Subtle "tap to begin" hint — only visible until the user taps once. */
+.gate-tap-hint {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  color: rgba(232, 198, 144, 0.85);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
 /* legacy — block no longer rendered */
 .letter-signature-block {
   margin: 28px auto 8px 6px;

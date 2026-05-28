@@ -1,10 +1,27 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, usePresence } from "framer-motion";
 import { localVideoUrl } from "../lib/demoAssets";
 
 export default function VideoScene() {
   const videoRef = useRef(null);
   const [hasVideo, setHasVideo] = useState(true);
+  const [isPresent] = usePresence();
+
+  // The moment AnimatePresence starts our exit animation, pause + detach the
+  // video. Without this, React's unmount cleanup only runs AFTER the 900ms
+  // exit animation finishes — so during those 900ms the video keeps playing
+  // its audio track over the letter scene's music. That was the "two songs
+  // playing at once" the reader heard.
+  useEffect(() => {
+    if (isPresent) return;
+    const v = videoRef.current;
+    if (!v) return;
+    try {
+      v.pause();
+      v.removeAttribute("src");
+      v.load();
+    } catch {}
+  }, [isPresent]);
 
   useEffect(() => {
     const v = videoRef.current;

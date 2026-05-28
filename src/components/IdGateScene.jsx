@@ -11,16 +11,25 @@ export default function IdGateScene({ onUnlock }) {
   const [unlocking, setUnlocking] = useState(false);
   const [step, setStep] = useState(0);
 
-  // Unlock audio on the first real user gesture. Browser policy requires it,
-  // otherwise the AudioContext stays suspended and playSent() is silent.
+  // Try to unlock audio on ANY user gesture — even scroll or moving the
+  // pointer counts. Browser policy still blocks the first sound if nothing
+  // has been touched yet, but every later one works.
   useEffect(() => {
-    const evs = ["pointerdown", "touchstart", "click", "keydown"];
-    evs.forEach((ev) => window.addEventListener(ev, unlockAudio, { passive: true }));
-    return () => evs.forEach((ev) => window.removeEventListener(ev, unlockAudio));
+    const evs = [
+      "pointerdown", "touchstart", "touchend", "click",
+      "keydown", "scroll", "wheel", "pointermove",
+    ];
+    evs.forEach((ev) =>
+      window.addEventListener(ev, unlockAudio, { passive: true })
+    );
+    // Also try once on mount in case the navigation itself counts
+    // as a transient user activation (some mobile browsers honor that).
+    unlockAudio();
+    return () =>
+      evs.forEach((ev) => window.removeEventListener(ev, unlockAudio));
   }, []);
 
-  // Auto-paced reveal. Never blocks on audio — if the first "sent" sound is
-  // skipped on cold refresh (no interaction yet), all subsequent ones still play.
+  // Auto-paced reveal — starts immediately, no tap required.
   useEffect(() => {
     const times = [900, 1100, 1500, 1200];
     if (step >= times.length) return;
