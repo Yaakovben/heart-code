@@ -5,7 +5,7 @@ import IdGateScene from "./components/IdGateScene";
 import LetterScene from "./components/LetterScene";
 import VideoScene from "./components/VideoScene";
 import Particles from "./components/Particles";
-import { localMusicUrl } from "./lib/demoAssets";
+import { localMusicUrl, localVideoUrl } from "./lib/demoAssets";
 
 export default function App() {
   const [stage, setStage] = useState("gate");
@@ -17,10 +17,14 @@ export default function App() {
     fetch(new URL("./assets/fonts/gveret.ttf", import.meta.url).href).catch(() => {});
   }, []);
 
-  // Warm the MP3 in the browser cache from the very first paint, so decoding
-  // is already done by the time we hit play().
+  // Warm the MP3 + video in the browser cache from the very first paint, so
+  // by the time the user reaches each scene the file is already downloaded.
+  // We use plain fetch rather than a hidden <video preload> because some
+  // mobile browsers autoplay muted preload videos and the audio track would
+  // bleed in alongside the music. fetch is silent and equally cache-warming.
   useEffect(() => {
     fetch(localMusicUrl).catch(() => {});
+    fetch(localVideoUrl).catch(() => {});
   }, []);
 
   // Create the Howl and start it (silently, volume:0) on the FIRST user

@@ -3,8 +3,12 @@ import { motion } from "framer-motion";
 import { Howl } from "howler";
 import message from "../data/message.txt?raw";
 import writingSoundUrl from "../assets/writing.mp3";
-import { localVideoUrl } from "../lib/demoAssets";
 import HandwritingCanvas from "./HandwritingCanvas";
+import handPenUrl from "../assets/hand-pen.png";
+
+const FLOURISH_D = "M 10 22 C 2 12, 14 2, 28 6 C 42 12, 40 26, 32 24 L 104 20";
+const FLOURISH_DELAY_MS = 250;   // matches motion path delay (0.1 + 0.15)
+const FLOURISH_DURATION_MS = 850;
 
 const messageLines = message
   .split(/\r?\n/)
@@ -139,9 +143,41 @@ function useViewportSize() {
 
 export default function LetterScene({ muted = false }) {
   const [done, setDone] = useState(false);
+  const [handPos, setHandPos] = useState({ x: 10, y: 22, visible: false });
+  const flourishPathRef = useRef(null);
   // Writing sound only plays when the music is muted — otherwise it would
   // layer over the background track and feel noisy.
   useQuillTicker(!done && muted);
+
+  // Animate the hand along the flourish path so the curve looks drawn by it.
+  useEffect(() => {
+    if (!done) return;
+    let raf;
+    let started = false;
+    const tick = (t) => {
+      const path = flourishPathRef.current;
+      if (!path) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      if (!started) {
+        started = t;
+      }
+      const elapsed = t - started;
+      if (elapsed < FLOURISH_DELAY_MS) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      const totalLen = path.getTotalLength();
+      const progress = Math.min(1, (elapsed - FLOURISH_DELAY_MS) / FLOURISH_DURATION_MS);
+      const point = path.getPointAtLength(progress * totalLen);
+      setHandPos({ x: point.x, y: point.y, visible: progress < 1 });
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [done]);
+
   const { w: vw } = useViewportSize();
   // Fluid font + hand sizing across phones, tablets, desktops.
   const fontSize = Math.round(Math.max(18, Math.min(30, vw * 0.045)));
@@ -155,16 +191,6 @@ export default function LetterScene({ muted = false }) {
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
     >
-      {/* Warm the video while the reader is on the letter, so it starts
-          near-instantly when they tap continue. */}
-      <video
-        src={localVideoUrl}
-        preload="auto"
-        muted
-        playsInline
-        aria-hidden
-        style={{ position: "absolute", width: 0, height: 0, opacity: 0, pointerEvents: "none" }}
-      />
       <motion.div
         className="letter-stage-real"
         initial={{ scale: 0.94, opacity: 0 }}
@@ -199,10 +225,8 @@ export default function LetterScene({ muted = false }) {
                   transition={{ delay: 0.1, duration: 0.15 }}
                 >
                   <motion.path
-                    d="M 10 22
-                       C 2 12, 14 2, 28 6
-                       C 42 12, 40 26, 32 24
-                       L 104 20"
+                    ref={flourishPathRef}
+                    d={FLOURISH_D}
                     fill="none"
                     stroke="#1a0e08"
                     strokeWidth="1.05"
@@ -212,6 +236,15 @@ export default function LetterScene({ muted = false }) {
                     animate={{ pathLength: 1 }}
                     transition={{ delay: 0.15, duration: 0.85, ease: [0.5, 0, 0.3, 1] }}
                   />
+                  {handPos.visible && (
+                    <image
+                      href={handPenUrl}
+                      width="22"
+                      x={handPos.x - 3}
+                      y={handPos.y - 18}
+                      style={{ pointerEvents: "none" }}
+                    />
+                  )}
                 </motion.svg>
               )}
             </div>
