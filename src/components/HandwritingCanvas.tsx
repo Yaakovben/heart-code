@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import * as opentype from "opentype.js";
-import ankaFontUrl from "../assets/fonts/bellefair.ttf?url";
+import ankaFontUrl from "../assets/fonts/gveret.ttf?url";
 import handPenUrl from "../assets/hand-pen.png";
 
 // ---------- types ----------
@@ -113,7 +113,14 @@ function textToPaths(font: opentype.Font, text: string, fontSize: number): Line 
 
 function wrapLines(font: opentype.Font, lines: string[], fontSize: number, maxWidth: number): Line[] {
   const out: Line[] = [];
-  for (const text of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const text = lines[i];
+    // Explicit empty line in the source = an intentional blank (e.g. between
+    // body and signature). Render it so the gap actually appears.
+    if (text.trim() === "") {
+      out.push({ glyphs: [], width: 0, blank: true });
+      continue;
+    }
     const words = text.split(" ");
     let current = "";
     for (const w of words) {
@@ -126,7 +133,9 @@ function wrapLines(font: opentype.Font, lines: string[], fontSize: number, maxWi
       }
     }
     if (current) out.push(textToPaths(font, current, fontSize));
-    out.push({ glyphs: [], width: 0, blank: true });
+    // Keep the blank line after the greeting (first paragraph); other
+    // paragraphs flow tight together so the letter reads as one note.
+    if (i === 0) out.push({ glyphs: [], width: 0, blank: true });
   }
   return out;
 }
@@ -172,12 +181,10 @@ export default function HandwritingCanvas({
     return () => window.removeEventListener("resize", rebuild);
   }, [font, lines, fontSize]);
 
-  // Detect manual scroll once — and stop auto-following after that, so the
-  // reader can scroll back to re-read without the pen yanking them forward.
+  // Detect manual scroll on the letter scroller — once the reader takes over,
+  // stop auto-following so they can scroll back to re-read undisturbed.
   useEffect(() => {
-    const scroller =
-      containerRef.current?.closest<HTMLElement>(".hw-scroll") ??
-      (containerRef.current?.parentElement as HTMLElement | null);
+    const scroller = containerRef.current?.closest<HTMLElement>(".letter-scroll");
     if (!scroller) return;
     const markUserScroll = () => { userScrolledRef.current = true; };
     scroller.addEventListener("wheel", markUserScroll, { passive: true });
@@ -190,21 +197,22 @@ export default function HandwritingCanvas({
     };
   }, []);
 
-  // Keep the active line + hand area above the bottom fade — unless the user
-  // has taken over scrolling.
+  // Auto-scroll the letter container so the pen stays in view — the bsd and
+  // verse above scroll up with it, like reading a real letter.
   useEffect(() => {
     if (userScrolledRef.current) return;
-    const scroller =
-      containerRef.current?.closest<HTMLElement>(".hw-scroll") ??
-      (containerRef.current?.parentElement as HTMLElement | null);
-    if (!scroller) return;
-    const lineY = activeLineIdx * fontSize * lineGap;
-    const ideal = Math.max(0, lineY - scroller.clientHeight * 0.6);
+    const el = containerRef.current;
+    const scroller = el?.closest<HTMLElement>(".letter-scroll");
+    if (!el || !scroller) return;
+    // Pen y relative to the scroller content.
+    const elTopInScroller = el.offsetTop;
+    const penY = elTopInScroller + activeLineIdx * fontSize * lineGap;
     const viewTop = scroller.scrollTop;
-    const lineBottom = lineY + fontSize * 2.4;
-    const safeBottom = viewTop + scroller.clientHeight * 0.72;
-    if (lineBottom > safeBottom || lineY < viewTop) {
-      scroller.scrollTo({ top: ideal, behavior: "smooth" });
+    const viewH = scroller.clientHeight;
+    const safeBottom = viewTop + viewH * 0.72;
+    const lineBottom = penY + fontSize * 2.4;
+    if (lineBottom > safeBottom || penY < viewTop) {
+      scroller.scrollTo({ top: Math.max(0, penY - viewH * 0.55), behavior: "smooth" });
     }
   }, [activeLineIdx, fontSize, lineGap]);
 
@@ -244,7 +252,18 @@ export default function HandwritingCanvas({
   }, [font, lineData, activeLineIdx, activeGlyphIdx, charDelay, onDone]);
 
   if (!font) {
-    return <div className="hw-loading">טוען כתב יד…</div>;
+    // Reserve approximate height so the paper doesn't jump when content arrives.
+    // Estimate ~1.6x source-line count to allow for word-wrap + blank-line separators.
+    const estimatedHeight = Math.max(
+      320,
+      Math.ceil(lines.length * 1.6) * fontSize * lineGap + fontSize
+    );
+    return (
+      <div
+        className="hw-loading"
+        style={{ minHeight: estimatedHeight, width: "100%" }}
+      />
+    );
   }
 
   const svgW = maxLineWidth;
@@ -273,6 +292,12 @@ export default function HandwritingCanvas({
           height: "auto",
         }}
       >
+        <defs>
+          <filter id="hw-thinify" x="-5%" y="-5%" width="110%" height="110%">
+            <feMorphology operator="erode" radius="0.45" />
+          </filter>
+        </defs>
+        <g filter="url(#hw-thinify)">
         {lineData.map((line, li) => {
           if (line.blank) return null;
           const isPast = li < activeLineIdx;
@@ -298,6 +323,7 @@ export default function HandwritingCanvas({
             </g>
           );
         })}
+        </g>
       </svg>
 
       {activeLineIdx < lineData.length && (

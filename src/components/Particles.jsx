@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 
-export default function Particles({ count = 32 }) {
+export default function Particles({
+  // Lighter particle load on mobile — keeps the page smooth at 60fps
+  count = typeof window !== "undefined" && window.innerWidth < 720 ? 16 : 28,
+}) {
   const items = useMemo(
     () =>
       Array.from({ length: count }).map((_, i) => ({

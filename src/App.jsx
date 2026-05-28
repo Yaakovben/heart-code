@@ -12,36 +12,42 @@ export default function App() {
   const [muted, setMuted] = useState(false);
   const soundRef = useRef(null);
 
-  // Init music with Howler — starts after the ID gate is unlocked.
-  // First 12 seconds of the track are skipped on every play AND every loop.
+  // Preload music + handwriting font during the gate so the letter scene
+  // appears instantly. Music only starts playing once we leave the gate.
+  useEffect(() => {
+    if (soundRef.current) return;
+    soundRef.current = new Howl({
+      src: [localMusicUrl],
+      loop: true,
+      volume: 0,
+      html5: false, // Web Audio — full volume/mute control on iOS
+      preload: true,
+    });
+    // Warm the font cache early.
+    fetch(new URL("./assets/fonts/gveret.ttf", import.meta.url).href).catch(() => {});
+  }, []);
+
+  // Start playing the music the first time we leave the gate.
   useEffect(() => {
     if (stage === "gate") return;
-    if (!soundRef.current) {
-      soundRef.current = new Howl({
-        src: [localMusicUrl],
-        loop: false, // we'll loop manually via onend so we can skip to 12s every time
-        volume: 0,
-        html5: true,
-        preload: true,
-        onplay: function () {
-          // Skip intro on the very first play of each loop cycle.
-          if (this.seek() < 12) this.seek(12);
-        },
-        onend: function () {
-          // Manual loop — restart at 12s.
-          this.seek(12);
-          this.play();
-        },
-      });
-    }
     const s = soundRef.current;
-    const hide = stage === "video" || muted;
-    if (hide) {
-      s.fade(s.volume(), 0, 600);
-    } else {
-      if (!s.playing()) s.play();
-      s.fade(s.volume(), 0.4, 1500);
-    }
+    if (!s) return;
+    if (!s.playing()) s.play();
+  }, [stage]);
+
+  // Drive volume + mute from current state. Cancels any in-flight fade so
+  // rapid stage changes (letter ↔ video) can't stack and break the audio.
+  useEffect(() => {
+    const s = soundRef.current;
+    if (!s) return;
+    s.mute(muted);
+    const target = stage === "video" ? 0 : 0.4;
+    const cur = s.volume();
+    // Snap current volume — this cancels any in-flight fade tween so
+    // rapid stage transitions can't stack and produce jittery volume.
+    s.volume(cur);
+    if (!s.playing()) s.play();
+    s.fade(cur, target, target === 0 ? 180 : 1200);
   }, [stage, muted]);
 
   useEffect(() => () => soundRef.current?.unload(), []);

@@ -47,7 +47,7 @@ export default function VideoScene() {
 
       {/* Hearts flying in from every direction */}
       <div className="v3-hearts" aria-hidden>
-        {Array.from({ length: 60 }).map((_, i) => {
+        {Array.from({ length: 28 }).map((_, i) => {
           const dir = i % 4; // 0=bottom→up, 1=top→down, 2=left→right, 3=right→left
           const cross = ((i * 41) % 95) + 2; // 2-97 % across the perpendicular axis
           const delay = (i * 0.4) % 14;
@@ -127,6 +127,9 @@ export default function VideoScene() {
           src={localVideoUrl}
           playsInline
           autoPlay
+          preload="auto"
+          // @ts-ignore — non-standard but supported on Chromium-based browsers
+          fetchpriority="high"
           controls={hasVideo}
           style={{ display: hasVideo ? "block" : "none" }}
         />

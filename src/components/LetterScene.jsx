@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Howl } from "howler";
 import message from "../data/message.txt?raw";
 import writingSoundUrl from "../assets/writing.mp3";
+import { localVideoUrl } from "../lib/demoAssets";
 import HandwritingCanvas from "./HandwritingCanvas";
 
 const lines = message
@@ -124,6 +125,16 @@ export default function LetterScene() {
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
     >
+      {/* Warm the video while the reader is on the letter, so it starts
+          near-instantly when they tap continue. */}
+      <video
+        src={localVideoUrl}
+        preload="auto"
+        muted
+        playsInline
+        aria-hidden
+        style={{ position: "absolute", width: 0, height: 0, opacity: 0, pointerEvents: "none" }}
+      />
       <motion.div
         className="letter-stage-real"
         initial={{ scale: 0.94, opacity: 0 }}
@@ -131,29 +142,61 @@ export default function LetterScene() {
         transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
       >
         <div className="letter-paper-real">
-          <span className="letter-bsd">בס״ד</span>
-          <div className="letter-verse">
-            "רַבּוֹת בָּנוֹת עָשׂוּ חָיִל, וְאַתְּ עָלִית עַל־כֻּלָּנָה"
+          <div className="letter-scroll">
+            <div className="letter-bsd">בס״ד</div>
+            <div className="letter-verse">
+              "רַבּוֹת בָּנוֹת עָשׂוּ חָיִל, וְאַתְּ עָלִית עַל־כֻּלָּנָה"
+            </div>
+            <div className="hw-scroll">
+              <HandwritingCanvas
+                lines={lines}
+                fontSize={fontSize}
+                handWidth={handWidth}
+                lineGap={1.25}
+                onDone={() => setDone(true)}
+              />
+            </div>
+            {done && (
+              <motion.div
+                className="letter-signature-block"
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5, duration: 1.2 }}
+              >
+                <div className="letter-sig-line1">שלך לתמיד</div>
+                <div className="letter-sig-name-wrap">
+                  <motion.div
+                    className="letter-sig-name"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1, duration: 0.8 }}
+                  >
+                    יעקב
+                  </motion.div>
+                  <svg
+                    className="letter-sig-flourish"
+                    viewBox="0 0 220 80"
+                    aria-hidden
+                    preserveAspectRatio="none"
+                  >
+                    {/* Starts at the bottom-LEFT (where ב ends visually in RTL),
+                        curves up and over the whole name, ending on the right. */}
+                    <motion.path
+                      d="M 14 64 C 30 8, 70 -4, 120 18 S 195 36, 210 12"
+                      fill="none"
+                      stroke="#3a1f0a"
+                      strokeWidth="2.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ delay: 1.8, duration: 1.4, ease: "easeInOut" }}
+                    />
+                  </svg>
+                </div>
+              </motion.div>
+            )}
           </div>
-          <div className="hw-scroll">
-            <HandwritingCanvas
-              lines={lines}
-              fontSize={fontSize}
-              handWidth={handWidth}
-              lineGap={1.25}
-              onDone={() => setDone(true)}
-            />
-          </div>
-          {done && (
-            <motion.div
-              className="letter-signature"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 1.2 }}
-            >
-              ~ שלך, תמיד
-            </motion.div>
-          )}
         </div>
       </motion.div>
     </motion.section>

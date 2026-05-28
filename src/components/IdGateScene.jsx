@@ -219,10 +219,13 @@ export default function IdGateScene({ onUnlock }) {
                         ♥
                       </motion.span>
                     ) : (
-                      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden>
+                      <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden>
                         <path
-                          d="M2.01 21l20.99-9L2.01 3 2 10l15 2-15 2z"
-                          fill="currentColor"
+                          d="M2.5 22l24-9.5L2.5 3l5 9.5L2.5 22z"
+                          fill="#fff"
+                          stroke="#fff"
+                          strokeWidth="0.5"
+                          strokeLinejoin="round"
                         />
                       </svg>
                     )}

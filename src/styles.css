@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=Assistant:wght@300;400;500;600&family=Caveat:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=Assistant:wght@300;400;500;600&family=Caveat:wght@400;500;600;700&family=Stylish&family=Suez+One&display=swap");
 
 :root {
   color-scheme: light;
@@ -561,49 +561,38 @@ body::after {
 .chat2-bubble-input.is-error .chat2-input { color: #fff7ec; caret-color: #fff; }
 .chat2-bubble-input.is-error .chat2-input::placeholder { color: rgba(255, 247, 236, 0.5); }
 
+/* Authentic WhatsApp send button — solid teal-green, flat, paper plane icon */
 .chat2-send-wa {
   flex: 0 0 auto;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  background: linear-gradient(135deg, #34e88a 0%, #15a08e 100%);
+  border: none;
+  background: #00a884;
   color: #fff;
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
+  transition: transform 0.15s ease, background 0.15s ease;
   box-shadow:
-    0 8px 22px rgba(18, 140, 126, 0.7),
-    0 0 30px rgba(45, 212, 121, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.18);
   margin-inline-start: 8px;
+  padding: 0;
 }
-.chat2-send-wa svg { width: 24px; height: 24px; }
+.chat2-send-wa:hover:not(:disabled) { background: #06cf9c; }
+.chat2-send-wa:active:not(:disabled) { background: #008f72; transform: scale(0.95); }
 .chat2-send-wa svg {
-  transform: scaleX(-1) translateX(1px);
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  width: 22px;
+  height: 22px;
+  transform: translateX(1px); /* asymmetric icon → visual center */
 }
 .chat2-send-wa.is-ready {
-  box-shadow:
-    0 8px 22px rgba(18, 140, 126, 0.7),
-    0 0 0 0 rgba(45, 212, 121, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   animation: sendReady 1.8s ease-in-out infinite;
 }
 @keyframes sendReady {
-  0%, 100% {
-    box-shadow:
-      0 8px 22px rgba(18, 140, 126, 0.7),
-      0 0 0 0 rgba(45, 212, 121, 0.55),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  }
-  50% {
-    box-shadow:
-      0 8px 22px rgba(18, 140, 126, 0.7),
-      0 0 0 10px rgba(45, 212, 121, 0),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  }
+  0%, 100% { box-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 0 0 rgba(0,168,132,0.55); }
+  50%      { box-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 0 8px rgba(0,168,132,0); }
 }
 .chat2-send-wa:disabled {
   opacity: 0.4;
@@ -1218,13 +1207,9 @@ body::after {
 .hw-scroll {
   position: relative;
   width: 100%;
-  max-height: min(50vh, 380px);
-  overflow-y: auto;
-  overflow-x: visible;
   direction: ltr;
   padding: 4px 6px 12px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  overflow: visible;
 }
 .hw-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .hw-canvas { display: block; }
@@ -1326,16 +1311,30 @@ body::after {
     radial-gradient(ellipse 60% 50% at center, transparent 60%, rgba(140, 90, 40, 0.12) 100%);
   border-radius: 4px;
 }
+/* Scrolls together with the rest of the letter content. */
+.letter-scroll {
+  width: 100%;
+  max-height: 60vh;
+  max-height: 60dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 4px 8px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.letter-scroll::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
 .letter-bsd {
-  position: absolute;
-  top: 18px;
-  right: 22px;
+  display: block;
+  text-align: right;
   font-family: "Frank Ruhl Libre", "Cormorant Garamond", serif;
   font-weight: 600;
   font-size: 0.95rem;
   color: rgba(80, 40, 10, 0.65);
   letter-spacing: 0.02em;
-  z-index: 5;
+  margin: 0 0 4px;
 }
 .letter-verse {
   font-family: "Frank Ruhl Libre", "David Libre", serif;
@@ -1346,7 +1345,7 @@ body::after {
   text-align: center;
   line-height: 1.4;
   letter-spacing: 0;
-  margin: -18px auto 18px;
+  margin: 6px auto 18px;
   padding: 0 6px;
   position: relative;
   max-width: 96%;
@@ -1388,6 +1387,49 @@ body::after {
     0 0 0.4px rgba(26, 14, 8, 0.5),
     0.3px 0.2px 0 rgba(20, 10, 5, 0.25);
 }
+/* Bottom-left signed signature block with hand-drawn flourish above the name */
+.letter-signature-block {
+  margin: 28px auto 8px 6px; /* margin-right: auto pushes to LEFT side */
+  width: fit-content;
+  text-align: center;
+  direction: rtl;
+  color: #3a1f0a;
+}
+.letter-sig-line1 {
+  font-family: "Stylish", "Frank Ruhl Libre", serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: #4a2810;
+  letter-spacing: 0.02em;
+}
+.letter-sig-name-wrap {
+  position: relative;
+  display: inline-block;
+  margin-top: 4px;
+  padding: 4px 0;
+}
+.letter-sig-flourish {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+.letter-sig-name {
+  position: relative;
+  z-index: 1;
+  font-family: "Stylish", "Suez One", "Frank Ruhl Libre", serif;
+  font-size: 1.9rem;
+  color: #3a1f0a;
+  transform: skewX(-8deg) rotate(-4deg);
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.3);
+  padding: 0 12px;
+}
+
+/* (old) signature classes — kept harmless */
 .letter-signature {
   margin-top: 18px;
   font-family: "Cormorant Garamond", serif;
@@ -1397,6 +1439,35 @@ body::after {
   text-align: left;
   direction: rtl;
   padding-left: 20px;
+  line-height: 1.5;
+}
+.letter-signature-name {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: "Stylish", "Suez One", "Frank Ruhl Libre", serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+  color: #5a2a08;
+  transform: skewX(-10deg) rotate(-3deg);
+  transform-origin: right center;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.3);
+  position: relative;
+}
+.letter-signature-name::after {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-top: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    currentColor 25%,
+    currentColor 75%,
+    transparent 100%);
+  opacity: 0.45;
+  transform: skewX(-8deg) translateX(-4px);
+  border-radius: 1px;
 }
 
 /* Real photo letter stage */
@@ -1481,23 +1552,14 @@ body::after {
 }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* Handwriting canvas — scrollable but no visible scrollbar */
+/* Letter flows naturally — page scrolls instead of a nested scroll box. */
 .hw-scroll {
   width: 100%;
-  max-height: 60vh;
-  max-height: 60dvh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px 0;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  padding: 8px 14px 8px 0;
+  overflow: visible;
 }
-.hw-scroll::-webkit-scrollbar { width: 0; height: 0; display: none; }
-.hw-canvas { width: 100%; overflow: hidden; }
+.hw-canvas { width: 100%; overflow: visible; }
 .hw-canvas svg { max-width: 100%; height: auto; }
-.hw-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .hw-loading {
   font-family: "Assistant", sans-serif;
   color: var(--gold-deep);
@@ -1514,7 +1576,6 @@ body::after {
   .letter-paper-real { border-radius: 2px; }
   .letter-paper-real::after { inset: 12px 6px 16px 6px; }
   .letter-monogram { font-size: 0.95rem; letter-spacing: 0.2em; }
-  .hw-scroll { max-height: 56dvh; }
   .real-hand-photo { width: 60%; right: -30px; bottom: -20px; }
   .bottom-nav { bottom: 14px; gap: 8px; }
   .nav-btn { padding: 11px 22px; font-size: 0.86rem; letter-spacing: 0.14em; }
@@ -1549,13 +1610,11 @@ body::after {
 
 /* Landscape phones — short viewport, prefer compact paddings & smaller letter */
 @media (max-height: 620px) {
-  .hw-scroll { max-height: 62dvh; }
   .mute-btn { top: 10px; right: 10px; width: 36px; height: 36px; }
 }
 
 @media (max-height: 480px) and (orientation: landscape) {
   .app-shell { align-items: flex-start; padding-top: 12px; }
-  .hw-scroll { max-height: 70dvh; }
   .nav-back-top,
   .nav-continue { bottom: 10px; left: 10px; padding: 9px 16px 9px 20px; font-size: 0.9rem; }
 }
@@ -1583,12 +1642,16 @@ body::after {
   position: relative;
   width: 100%;
   max-width: 580px;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 0 8px 80px;
+  padding: clamp(8px, 2vw, 16px);
+  gap: clamp(6px, 1.4vw, 12px);
   isolation: isolate;
+  overflow: hidden;
 }
 .v3-aura {
   position: absolute;
@@ -1630,6 +1693,7 @@ body::after {
 @keyframes v3Float2 { from { transform: translate(0,0); } to { transform: translate(-30px, 25px); } }
 
 .v3-overline {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 12px;
@@ -1639,7 +1703,7 @@ body::after {
   font-size: clamp(0.85rem, 2.6vw, 1rem);
   letter-spacing: 0.06em;
   color: rgba(255, 200, 210, 0.92);
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 .v3-overline-heart {
   color: #ff7a9a;
@@ -1683,18 +1747,22 @@ body::after {
 .v3-frame {
   position: relative;
   width: 100%;
-  border-radius: 32px;
+  flex: 0 1 auto;
+  /* Responsive height that always leaves room for overline + meta + padding
+     within 100dvh — no scroll, no clipping. */
+  height: clamp(240px, 62dvh, 720px);
+  border-radius: clamp(18px, 3vw, 32px);
   overflow: hidden;
   background: #000;
   box-shadow:
-    0 36px 80px rgba(0, 0, 0, 0.6),
+    0 24px 60px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 200, 220, 0.25),
     0 0 60px rgba(255, 120, 160, 0.35),
     0 0 120px rgba(255, 140, 180, 0.2);
 }
 .v3-frame video {
   width: 100%;
-  height: 80vh;
+  height: 100%;
   display: block;
   background: #000;
   object-fit: contain;
@@ -1751,12 +1819,13 @@ body::after {
 }
 
 .v3-meta {
-  margin-top: 20px;
+  flex: 0 0 auto;
+  margin-top: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 .v3-track-title {
   font-family: "Cormorant Garamond", serif;
