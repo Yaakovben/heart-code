@@ -502,7 +502,10 @@ body::after {
   background:
     linear-gradient(135deg, rgba(232, 198, 144, 0.95) 0%, rgba(196, 154, 96, 0.92) 100%);
   color: #2a1810;
-  border-bottom-right-radius: 6px;
+  /* Tail points toward the sender — Yaakov's bubble sits visually on the
+     left side of the chat (align-self: flex-end in RTL), so the pinched
+     corner is the bottom-left. */
+  border-bottom-left-radius: 6px;
   box-shadow:
     0 6px 16px rgba(120, 80, 30, 0.35),
     inset 0 1px 0 rgba(255, 245, 220, 0.45);
@@ -511,7 +514,8 @@ body::after {
   background: rgba(255, 245, 230, 0.06);
   color: #fbeed3;
   border: 1px solid rgba(232, 198, 144, 0.28);
-  border-bottom-left-radius: 6px;
+  /* Ruth's bubble sits on the right — tail is bottom-right. */
+  border-bottom-right-radius: 6px;
   backdrop-filter: blur(6px);
 }
 
@@ -1405,15 +1409,16 @@ body::after {
    "יעקב". Lives inside .hw-scroll so it scrolls along with the writing. */
 /* Flourish sits in the natural flow AFTER the canvas, then is pulled UP with
    negative margin so it overlaps the last written line ("יעקב"). */
+/* Loop + sweep flourish under יעקב — same baseline as the writing. */
 .letter-flourish-overlay {
-  display: block;
-  width: clamp(95px, 32%, 150px);
+  position: absolute;
+  bottom: 0.1em;
+  left: 4px;
+  width: clamp(100px, 30%, 140px);
   height: auto;
-  margin: -2.6em 0 0 12px;  /* sits just above the יעקב line on the LEFT */
   pointer-events: none;
   z-index: 4;
-  opacity: 0.92;
-  position: relative;
+  opacity: 0.95;
 }
 /* legacy — block no longer rendered */
 .letter-signature-block {

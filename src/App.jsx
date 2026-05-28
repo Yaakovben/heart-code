@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Howl } from "howler";
+import { Howl, Howler } from "howler";
 import IdGateScene from "./components/IdGateScene";
 import LetterScene from "./components/LetterScene";
 import VideoScene from "./components/VideoScene";
@@ -17,26 +17,45 @@ export default function App() {
     fetch(new URL("./assets/fonts/gveret.ttf", import.meta.url).href).catch(() => {});
   }, []);
 
-  // Music is created + started the first time we LEAVE the gate. That click
-  // is a real user gesture, so the Web Audio context unlocks cleanly on iOS.
-  // Once created, we keep the same Howl alive and only fade its volume across
-  // stages — never re-create or pause it.
+  // Create the Howl immediately at app mount. The 5MB MP3 starts downloading
+  // and decoding while the reader is still in the gate scene — by the time
+  // they unlock, the audio is ready and play() is instant (no startup delay).
+  // We don't call play() here; iOS would block it without a user gesture.
+  useEffect(() => {
+    if (soundRef.current) return;
+    soundRef.current = new Howl({
+      src: [localMusicUrl],
+      loop: true,
+      volume: 0,
+      html5: false,
+      preload: true,
+    });
+  }, []);
+
+  // Resume Howler's AudioContext on the very first user interaction. Without
+  // this, ctx stays suspended (Howl was created before any gesture) and the
+  // delayed play() inside the gate submit's setTimeout falls outside the
+  // gesture window — iOS silently blocks playback.
+  useEffect(() => {
+    const unlock = () => {
+      const ctx = Howler.ctx;
+      if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+    };
+    const evs = ["pointerdown", "touchstart", "click", "keydown"];
+    evs.forEach((ev) => window.addEventListener(ev, unlock, { passive: true }));
+    return () => evs.forEach((ev) => window.removeEventListener(ev, unlock));
+  }, []);
+
+  // Volume / start logic — runs every time stage or muted changes.
   useEffect(() => {
     if (stage === "gate") return;
-
-    if (!soundRef.current) {
-      soundRef.current = new Howl({
-        src: [localMusicUrl],
-        loop: true,
-        volume: 0,
-        html5: false, // Web Audio — full volume/mute control on iOS
-      });
-      soundRef.current.play();
-    }
-
     const s = soundRef.current;
-    s.mute(muted);
+    if (!s) return;
     if (!s.playing()) s.play();
+    s.mute(muted);
+    // Do NOT call play() here again. The init block above started it once and
+    // loop:true keeps it alive across stages. A second play() spawns a parallel
+    // playback instance in Howler — what the user heard as "doubled music".
     const target = stage === "video" ? 0 : 0.4;
     const cur = s.volume();
     // Skip the fade entirely when we're already at target — otherwise a re-render
@@ -48,6 +67,46 @@ export default function App() {
   }, [stage, muted]);
 
   useEffect(() => () => soundRef.current?.unload(), []);
+
+  // When the screen turns off / tab hides on mobile, the AudioContext gets
+  // suspended and the playback may halt. On return, explicitly resume the
+  // context and re-start the sound if it's not playing.
+  useEffect(() => {
+    // Explicit pause when the page goes background — Howler then remembers
+    // the current seek position. On return, play() resumes from that point
+    // instead of restarting at 0 (which is what happened before).
+    const onHide = () => {
+      const s = soundRef.current;
+      if (s && s.playing()) s.pause();
+    };
+    const onShow = () => {
+      const s = soundRef.current;
+      if (!s) return;
+      const ctx = Howler.ctx;
+      const resumePlay = () => { if (!s.playing()) s.play(); };
+      if (ctx && ctx.state === "suspended") {
+        ctx.resume().then(resumePlay).catch(resumePlay);
+      } else {
+        resumePlay();
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") onHide();
+      else onShow();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", onShow);
+    window.addEventListener("pagehide", onHide);
+    window.addEventListener("blur", onHide);
+    window.addEventListener("focus", onShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", onShow);
+      window.removeEventListener("pagehide", onHide);
+      window.removeEventListener("blur", onHide);
+      window.removeEventListener("focus", onShow);
+    };
+  }, []);
 
   return (
     <div className="app-shell">
@@ -111,7 +170,7 @@ export default function App() {
         {stage === "gate" && (
           <IdGateScene key="gate" onUnlock={() => setStage("letter")} />
         )}
-        {stage === "letter" && <LetterScene key="letter" />}
+        {stage === "letter" && <LetterScene key="letter" muted={muted} />}
         {stage === "video" && <VideoScene key="video" />}
       </AnimatePresence>
     </div>

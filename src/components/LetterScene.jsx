@@ -104,6 +104,24 @@ function useQuillTicker(active) {
     try { sourceRef.current?.stop(); } catch {}
     ctxRef.current?.close().catch(() => {});
   }, []);
+
+  // Resume this context when returning from a backgrounded tab / screen-off —
+  // otherwise it stays suspended and the writing sound is silent on return.
+  useEffect(() => {
+    const wake = () => {
+      const ctx = ctxRef.current;
+      if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+    };
+    const onVisibility = () => { if (document.visibilityState === "visible") wake(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", wake);
+    window.addEventListener("focus", wake);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", wake);
+      window.removeEventListener("focus", wake);
+    };
+  }, []);
 }
 
 function useViewportSize() {
@@ -119,9 +137,11 @@ function useViewportSize() {
   return size;
 }
 
-export default function LetterScene() {
+export default function LetterScene({ muted = false }) {
   const [done, setDone] = useState(false);
-  useQuillTicker(!done);
+  // Writing sound only plays when the music is muted — otherwise it would
+  // layer over the background track and feel noisy.
+  useQuillTicker(!done && muted);
   const { w: vw } = useViewportSize();
   // Fluid font + hand sizing across phones, tablets, desktops.
   const fontSize = Math.round(Math.max(18, Math.min(30, vw * 0.045)));
@@ -166,27 +186,31 @@ export default function LetterScene() {
                 leftAlignLastN={2}
                 onDone={() => setDone(true)}
               />
-              {/* Short, natural flourish over ב of יעקב */}
+              {/* Flourish: small loop under ב, then a long sweep right under
+                  "יעקב" — like the red sketch the user drew. */}
               {done && (
                 <motion.svg
                   className="letter-flourish-overlay"
-                  viewBox="0 0 100 40"
+                  viewBox="0 0 100 38"
                   aria-hidden
                   preserveAspectRatio="none"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.2 }}
+                  transition={{ delay: 0.1, duration: 0.15 }}
                 >
                   <motion.path
-                    d="M 8 26 C 18 8, 44 4, 66 14 Q 82 20, 94 26"
+                    d="M 14 10
+                       C 0 10, 0 30, 14 32
+                       C 30 34, 32 10, 20 10
+                       L 96 12"
                     fill="none"
                     stroke="#1a0e08"
-                    strokeWidth="1.7"
+                    strokeWidth="1.05"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
-                    transition={{ delay: 0.2, duration: 0.55, ease: [0.5, 0, 0.3, 1] }}
+                    transition={{ delay: 0.15, duration: 0.65, ease: [0.5, 0, 0.3, 1] }}
                   />
                 </motion.svg>
               )}
