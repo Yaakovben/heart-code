@@ -21,6 +21,8 @@ type Props = {
   charDelay?: number;
   lineGap?: number;
   handWidth?: number;
+  // Last N non-blank lines render LEFT-aligned (signature feel).
+  leftAlignLastN?: number;
   onDone?: () => void;
 };
 
@@ -153,6 +155,7 @@ export default function HandwritingCanvas({
   charDelay = 95,
   lineGap = 1.6,
   handWidth = 150,
+  leftAlignLastN = 0,
   onDone,
 }: Props) {
   const [font, setFont] = useState<opentype.Font | null>(null);
@@ -269,7 +272,23 @@ export default function HandwritingCanvas({
   const svgW = maxLineWidth;
   const totalHeight = lineData.length * fontSize * lineGap + fontSize;
   const activeLine = lineData[activeLineIdx];
-  const handPos = computeHandPos(activeLine, activeLineIdx, activeGlyphIdx, svgW, fontSize, lineGap);
+  // If the active line is one of the left-aligned signature lines, the
+  // anchor X used for rendering is line.width + 16 (not svgW). The hand
+  // must follow the same anchor or it will be drawn at the wrong place.
+  const activeIsLeft = (() => {
+    if (!leftAlignLastN) return false;
+    let count = 0;
+    for (let li = lineData.length - 1; li >= 0; li--) {
+      if (lineData[li] && !lineData[li].blank) {
+        if (li === activeLineIdx) return true;
+        count++;
+        if (count >= leftAlignLastN) return false;
+      }
+    }
+    return false;
+  })();
+  const handAnchorX = activeIsLeft && activeLine ? activeLine.width + 16 : svgW;
+  const handPos = computeHandPos(activeLine, activeLineIdx, activeGlyphIdx, handAnchorX, fontSize, lineGap);
 
   return (
     <div
@@ -298,31 +317,48 @@ export default function HandwritingCanvas({
           </filter>
         </defs>
         <g filter="url(#hw-thinify)">
-        {lineData.map((line, li) => {
-          if (line.blank) return null;
-          const isPast = li < activeLineIdx;
-          const isActive = li === activeLineIdx;
-          if (!isPast && !isActive) return null;
-          const yOffset = li * fontSize * lineGap + fontSize;
-          return (
-            <g key={li} transform={`translate(${svgW}, ${yOffset})`}>
-              {line.glyphs.map((g, gi) => {
-                if (!g.d) return null;
-                const revealed = isPast || (isActive && gi < activeGlyphIdx);
-                const justAppeared = isActive && gi === activeGlyphIdx - 1;
-                return (
-                  <path
-                    key={gi}
-                    d={g.d}
-                    transform={`translate(${-g.x - g.advance}, 0)`}
-                    fill={revealed ? INK_DRY : INK_FRESH}
-                    style={glyphStyle(revealed, justAppeared)}
-                  />
-                );
-              })}
-            </g>
-          );
-        })}
+        {(() => {
+          // Compute which line indices should render LEFT-aligned
+          // (last N non-blank lines = "signature" lines).
+          const leftIdxSet = new Set<number>();
+          if (leftAlignLastN > 0) {
+            let countFound = 0;
+            for (let li = lineData.length - 1; li >= 0 && countFound < leftAlignLastN; li--) {
+              if (lineData[li] && !lineData[li].blank) {
+                leftIdxSet.add(li);
+                countFound++;
+              }
+            }
+          }
+          return lineData.map((line, li) => {
+            if (line.blank) return null;
+            const isPast = li < activeLineIdx;
+            const isActive = li === activeLineIdx;
+            if (!isPast && !isActive) return null;
+            const yOffset = li * fontSize * lineGap + fontSize;
+            // For left-aligned lines, anchor at line.width (with small inset)
+            // instead of the far-right svgW.
+            const groupX = leftIdxSet.has(li) ? line.width + 16 : svgW;
+            return (
+              <g key={li} transform={`translate(${groupX}, ${yOffset})`}>
+                {line.glyphs.map((g, gi) => {
+                  if (!g.d) return null;
+                  const revealed = isPast || (isActive && gi < activeGlyphIdx);
+                  const justAppeared = isActive && gi === activeGlyphIdx - 1;
+                  return (
+                    <path
+                      key={gi}
+                      d={g.d}
+                      transform={`translate(${-g.x - g.advance}, 0)`}
+                      fill={revealed ? INK_DRY : INK_FRESH}
+                      style={glyphStyle(revealed, justAppeared)}
+                    />
+                  );
+                })}
+              </g>
+            );
+          });
+        })()}
         </g>
       </svg>
 
@@ -371,13 +407,15 @@ function computeHandPos(
   }
   const idx = Math.min(glyphIdx, line.glyphs.length - 1);
   const g = line.glyphs[idx];
-  // Per-letter jitter — variable magnitude so movement feels alive.
   const seed = idx * 1.7;
   const mag = 0.6 + Math.abs(Math.sin(seed * 0.43)) * 0.8;
   const jx = (Math.sin(seed) * 8 + Math.cos(seed * 2.3) * 4) * mag;
   const jy = (Math.cos(seed) * 6 + Math.sin(seed * 1.7) * 3) * mag;
+  const rawX = svgW - g.x - g.advance * 1.15 + jx;
+  // Clamp left so the hand image (extends ~10px left of its anchor + wobble)
+  // never bleeds off the paper on narrow phones.
   return {
-    x: svgW - g.x - g.advance * 1.15 + jx,
+    x: Math.max(12, rawX),
     y: baseY + jy,
   };
 }
@@ -402,7 +440,8 @@ function HandPen({ width = 150 }: { width?: number }) {
           display: "block",
           transformOrigin: "12px 10px",
           transform: "translate(-10px, -8px) rotate(-10deg)",
-          filter: "sepia(0.14) saturate(0.95) contrast(1.04) brightness(1.02) blur(0.3px)",
+          filter: "sepia(0.14) saturate(0.95) contrast(1.04) brightness(1.02)",
+          imageRendering: "auto",
           WebkitMaskImage:
             "linear-gradient(125deg, #000 0%, #000 78%, rgba(0,0,0,0.55) 90%, transparent 100%)",
           maskImage:

@@ -12,42 +12,39 @@ export default function App() {
   const [muted, setMuted] = useState(false);
   const soundRef = useRef(null);
 
-  // Preload music + handwriting font during the gate so the letter scene
-  // appears instantly. Music only starts playing once we leave the gate.
+  // Warm the handwriting-font cache early so the letter scene mounts instantly.
   useEffect(() => {
-    if (soundRef.current) return;
-    soundRef.current = new Howl({
-      src: [localMusicUrl],
-      loop: true,
-      volume: 0,
-      html5: false, // Web Audio — full volume/mute control on iOS
-      preload: true,
-    });
-    // Warm the font cache early.
     fetch(new URL("./assets/fonts/gveret.ttf", import.meta.url).href).catch(() => {});
   }, []);
 
-  // Start playing the music the first time we leave the gate.
+  // Music is created + started the first time we LEAVE the gate. That click
+  // is a real user gesture, so the Web Audio context unlocks cleanly on iOS.
+  // Once created, we keep the same Howl alive and only fade its volume across
+  // stages — never re-create or pause it.
   useEffect(() => {
     if (stage === "gate") return;
-    const s = soundRef.current;
-    if (!s) return;
-    if (!s.playing()) s.play();
-  }, [stage]);
 
-  // Drive volume + mute from current state. Cancels any in-flight fade so
-  // rapid stage changes (letter ↔ video) can't stack and break the audio.
-  useEffect(() => {
+    if (!soundRef.current) {
+      soundRef.current = new Howl({
+        src: [localMusicUrl],
+        loop: true,
+        volume: 0,
+        html5: false, // Web Audio — full volume/mute control on iOS
+      });
+      soundRef.current.play();
+    }
+
     const s = soundRef.current;
-    if (!s) return;
     s.mute(muted);
+    if (!s.playing()) s.play();
     const target = stage === "video" ? 0 : 0.4;
     const cur = s.volume();
-    // Snap current volume — this cancels any in-flight fade tween so
-    // rapid stage transitions can't stack and produce jittery volume.
-    s.volume(cur);
-    if (!s.playing()) s.play();
-    s.fade(cur, target, target === 0 ? 180 : 1200);
+    // Skip the fade entirely when we're already at target — otherwise a re-render
+    // would cancel an in-flight fade and immediately restart it, audible as a
+    // flutter. The previous explicit volume() snap is what caused that bug.
+    if (Math.abs(cur - target) > 0.001) {
+      s.fade(cur, target, target === 0 ? 180 : 1200);
+    }
   }, [stage, muted]);
 
   useEffect(() => () => soundRef.current?.unload(), []);

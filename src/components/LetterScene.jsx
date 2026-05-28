@@ -6,10 +6,20 @@ import writingSoundUrl from "../assets/writing.mp3";
 import { localVideoUrl } from "../lib/demoAssets";
 import HandwritingCanvas from "./HandwritingCanvas";
 
-const lines = message
+const messageLines = message
   .split(/\r?\n/)
   .map((l) => l.trim())
   .filter(Boolean);
+
+// Signature is written by the same hand & font as the body — appended last.
+const SIG_LINE_TOP = "שלך לתמיד";
+const SIG_LINE_NAME = "יעקב";
+const lines = [
+  ...messageLines,
+  "",
+  SIG_LINE_TOP,
+  SIG_LINE_NAME,
+];
 
 // Gentle writing sound: real pencil-on-paper MP3, but routed through a heavy
 // lowpass filter so any click/tap-like high frequencies (footstep-ish noises)
@@ -153,49 +163,34 @@ export default function LetterScene() {
                 fontSize={fontSize}
                 handWidth={handWidth}
                 lineGap={1.25}
+                leftAlignLastN={2}
                 onDone={() => setDone(true)}
               />
+              {/* Short, natural flourish over ב of יעקב */}
+              {done && (
+                <motion.svg
+                  className="letter-flourish-overlay"
+                  viewBox="0 0 100 40"
+                  aria-hidden
+                  preserveAspectRatio="none"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.2 }}
+                >
+                  <motion.path
+                    d="M 8 26 C 18 8, 44 4, 66 14 Q 82 20, 94 26"
+                    fill="none"
+                    stroke="#1a0e08"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ delay: 0.2, duration: 0.55, ease: [0.5, 0, 0.3, 1] }}
+                  />
+                </motion.svg>
+              )}
             </div>
-            {done && (
-              <motion.div
-                className="letter-signature-block"
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5, duration: 1.2 }}
-              >
-                <div className="letter-sig-line1">שלך לתמיד</div>
-                <div className="letter-sig-name-wrap">
-                  <motion.div
-                    className="letter-sig-name"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1, duration: 0.8 }}
-                  >
-                    יעקב
-                  </motion.div>
-                  <svg
-                    className="letter-sig-flourish"
-                    viewBox="0 0 220 80"
-                    aria-hidden
-                    preserveAspectRatio="none"
-                  >
-                    {/* Starts at the bottom-LEFT (where ב ends visually in RTL),
-                        curves up and over the whole name, ending on the right. */}
-                    <motion.path
-                      d="M 14 64 C 30 8, 70 -4, 120 18 S 195 36, 210 12"
-                      fill="none"
-                      stroke="#3a1f0a"
-                      strokeWidth="2.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 1 }}
-                      transition={{ delay: 1.8, duration: 1.4, ease: "easeInOut" }}
-                    />
-                  </svg>
-                </div>
-              </motion.div>
-            )}
           </div>
         </div>
       </motion.div>
