@@ -5,23 +5,26 @@ import { localVideoUrl } from "../lib/demoAssets";
 export default function VideoScene() {
   const videoRef = useRef(null);
   const [hasVideo, setHasVideo] = useState(true);
-  const [isPresent] = usePresence();
+  const [isPresent, safeToRemove] = usePresence();
 
   // The moment AnimatePresence starts our exit animation, pause + detach the
-  // video. Without this, React's unmount cleanup only runs AFTER the 900ms
-  // exit animation finishes — so during those 900ms the video keeps playing
-  // its audio track over the letter scene's music. That was the "two songs
-  // playing at once" the reader heard.
+  // video so its audio track stops well before unmount. Then schedule the
+  // actual removal after the exit animation duration — usePresence makes us
+  // responsible for calling safeToRemove(), otherwise the scene stays in the
+  // DOM forever and the letter never mounts.
   useEffect(() => {
     if (isPresent) return;
     const v = videoRef.current;
-    if (!v) return;
-    try {
-      v.pause();
-      v.removeAttribute("src");
-      v.load();
-    } catch {}
-  }, [isPresent]);
+    if (v) {
+      try {
+        v.pause();
+        v.removeAttribute("src");
+        v.load();
+      } catch {}
+    }
+    const t = setTimeout(() => safeToRemove?.(), 900);
+    return () => clearTimeout(t);
+  }, [isPresent, safeToRemove]);
 
   useEffect(() => {
     const v = videoRef.current;
