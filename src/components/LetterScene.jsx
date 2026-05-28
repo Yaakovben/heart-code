@@ -191,7 +191,7 @@ export default function LetterScene({ muted = false }) {
               {done && (
                 <motion.svg
                   className="letter-flourish-overlay"
-                  viewBox="0 0 100 38"
+                  viewBox="0 0 108 38"
                   aria-hidden
                   preserveAspectRatio="none"
                   initial={{ opacity: 0 }}
@@ -199,10 +199,10 @@ export default function LetterScene({ muted = false }) {
                   transition={{ delay: 0.1, duration: 0.15 }}
                 >
                   <motion.path
-                    d="M 14 10
-                       C 0 10, 0 30, 14 32
-                       C 30 34, 32 10, 20 10
-                       L 96 12"
+                    d="M 10 22
+                       C 2 12, 14 2, 28 6
+                       C 42 12, 40 26, 32 24
+                       L 104 20"
                     fill="none"
                     stroke="#1a0e08"
                     strokeWidth="1.05"
@@ -210,7 +210,7 @@ export default function LetterScene({ muted = false }) {
                     strokeLinejoin="round"
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
-                    transition={{ delay: 0.15, duration: 0.65, ease: [0.5, 0, 0.3, 1] }}
+                    transition={{ delay: 0.15, duration: 0.85, ease: [0.5, 0, 0.3, 1] }}
                   />
                 </motion.svg>
               )}

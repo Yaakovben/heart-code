@@ -22,6 +22,15 @@ export default function VideoScene() {
     return () => {
       v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("error", onErr);
+      // Explicitly stop the video on unmount — without this, mobile browsers
+      // sometimes keep the audio track playing for a beat after the element
+      // is removed, layering it on top of the background music when the
+      // reader returns to the letter.
+      try {
+        v.pause();
+        v.removeAttribute("src");
+        v.load();
+      } catch {}
     };
   }, []);
 
