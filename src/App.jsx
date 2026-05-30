@@ -79,45 +79,68 @@ export default function App() {
 
   useEffect(() => () => soundRef.current?.unload(), []);
 
-  // When the screen turns off / tab hides on mobile, the AudioContext gets
-  // suspended and the playback may halt. On return, explicitly resume the
-  // context and re-start the sound if it's not playing.
+  // Robust recovery from iOS interruptions (phone calls, screen-off, tab-switch).
+  // The AudioContext gets suspended and Howler's playback halts; we have to
+  // retry play() multiple times after resume() because iOS occasionally fails
+  // the first attempt silently.
   useEffect(() => {
-    // Explicit pause when the page goes background — Howler then remembers
-    // the current seek position. On return, play() resumes from that point
-    // instead of restarting at 0 (which is what happened before).
     const onHide = () => {
       const s = soundRef.current;
       if (s && s.playing()) s.pause();
     };
-    const onShow = () => {
+    const tryRecover = (attempts = 0) => {
       const s = soundRef.current;
-      if (!s) return;
+      if (!s || muted || stage === "gate" || stage === "video") return;
       const ctx = Howler.ctx;
-      const resumePlay = () => { if (!s.playing()) s.play(); };
+      const doPlay = () => {
+        if (s.playing()) return;
+        try { s.play(); } catch {}
+        // iOS sometimes silently rejects the first play after resume.
+        if (!s.playing() && attempts < 6) {
+          setTimeout(() => tryRecover(attempts + 1), 180);
+        }
+      };
       if (ctx && ctx.state === "suspended") {
-        ctx.resume().then(resumePlay).catch(resumePlay);
+        ctx.resume().then(doPlay).catch(doPlay);
       } else {
-        resumePlay();
+        doPlay();
       }
     };
+    const onShow = () => tryRecover(0);
     const onVisibility = () => {
       if (document.visibilityState === "hidden") onHide();
       else onShow();
     };
+
+    // Also recover on the user's next tap — covers cases where the
+    // visibility events don't fire (e.g. some Android WebViews).
+    const onAnyTap = () => {
+      const s = soundRef.current;
+      if (!s) return;
+      const ctx = Howler.ctx;
+      if (ctx && ctx.state !== "running") ctx.resume().catch(() => {});
+      if (!s.playing() && !muted && stage !== "gate" && stage !== "video") {
+        try { s.play(); } catch {}
+      }
+    };
+
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pageshow", onShow);
     window.addEventListener("pagehide", onHide);
     window.addEventListener("blur", onHide);
     window.addEventListener("focus", onShow);
+    window.addEventListener("pointerdown", onAnyTap, { passive: true });
+    window.addEventListener("touchstart", onAnyTap, { passive: true });
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pageshow", onShow);
       window.removeEventListener("pagehide", onHide);
       window.removeEventListener("blur", onHide);
       window.removeEventListener("focus", onShow);
+      window.removeEventListener("pointerdown", onAnyTap);
+      window.removeEventListener("touchstart", onAnyTap);
     };
-  }, []);
+  }, [stage, muted]);
 
   return (
     <div className="app-shell">
