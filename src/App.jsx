@@ -12,6 +12,7 @@ export default function App() {
   const [stage, setStage] = useState("gate");
   const [muted, setMuted] = useState(false);
   const soundRef = useRef(null);
+  const sessionVideoRef = useRef(null);
 
   // Fully parse the handwriting font during the gate, not on letter mount.
   // loadFont() is a singleton in HandwritingCanvas — fetching here populates
@@ -39,10 +40,20 @@ export default function App() {
   //   2. The audio source is already streaming by the time the letter scene
   //      mounts, so the fade-up is instant — no startup delay.
   useEffect(() => {
-    let armed = true;
     const initAudio = () => {
-      if (!armed || soundRef.current) return;
-      armed = false;
+      // Kick the hidden session video on the same gesture — iOS sometimes
+      // blocks even muted autoplay, and the page only gains "media playback"
+      // status (which lets Web Audio bypass the silent switch) while a
+      // <video> is actively playing.
+      const sv = sessionVideoRef.current;
+      if (sv && sv.paused) {
+        sv.muted = true;
+        sv.play().catch(() => {});
+      }
+      // Only create if there's no live Howl yet. After a bfcache restore the
+      // previous Howl is unloaded and soundRef is reset to null, so the
+      // next gesture creates a fresh one cleanly.
+      if (soundRef.current) return;
       const s = new Howl({
         src: [localMusicUrl],
         loop: true,
@@ -115,7 +126,16 @@ export default function App() {
         doPlay();
       }
     };
-    const onShow = () => tryRecover(0);
+    // iOS bfcache: when the page is restored from the back-forward cache
+    // (re-open, swipe-back, etc.) the previous AudioContext is dead. Unload
+    // the stale Howl so the next gesture creates a fresh one.
+    const onShow = (e) => {
+      if (e && e.persisted) {
+        try { soundRef.current?.unload(); } catch {}
+        soundRef.current = null;
+      }
+      tryRecover(0);
+    };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") onHide();
       else onShow();
@@ -159,6 +179,7 @@ export default function App() {
           switch. Without this, iPhones on silent hear nothing. The element
           is invisible and muted so it contributes no audio of its own. */}
       <video
+        ref={sessionVideoRef}
         src={localVideoUrl}
         muted
         autoPlay
