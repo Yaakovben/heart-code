@@ -36,21 +36,19 @@ export default function App() {
   useEffect(() => {
     let unlocked = false;
     const start = () => {
-      // Always unlock the chat-sound Web Audio context (synthesized pings)
-      // on every user gesture — keeps it alive even on later iOS suspends.
+      // Always unlock the chat sounds (HTML5 <audio> blobs) on every gesture.
       unlockChatAudio();
       if (unlocked) return;
       const a = audioRef.current;
       if (!a) return;
       unlocked = true;
+      // Start the music playing at *volume 0* — never pause, never unmute
+      // a delayed promise. This avoids the iOS race where play→pause
+      // accidentally lets a chunk of audio through during the gate.
+      // The volume effect fades it in once the user enters the letter.
+      a.muted = false;
       a.volume = 0;
-      a.muted = true;
-      const p = a.play();
-      const settle = () => {
-        try { a.pause(); a.currentTime = 0; a.muted = false; } catch {}
-      };
-      if (p && typeof p.then === "function") p.then(settle).catch(settle);
-      else settle();
+      a.play().catch(() => {});
     };
     const evs = ["pointerdown", "touchstart", "click", "keydown"];
     evs.forEach((ev) => window.addEventListener(ev, start, { passive: true }));
