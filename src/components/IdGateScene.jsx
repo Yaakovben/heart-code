@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { playSent, playError, unlockAudio } from "../lib/chatSounds";
 
@@ -10,27 +10,18 @@ export default function IdGateScene({ onUnlock }) {
   const [error, setError] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [step, setStep] = useState(0);
+  // "Incoming call" answered → unlocks audio + starts the chat sequence.
+  const [answered, setAnswered] = useState(false);
 
-  // Try to unlock audio on ANY user gesture — even scroll or moving the
-  // pointer counts. Browser policy still blocks the first sound if nothing
-  // has been touched yet, but every later one works.
-  useEffect(() => {
-    const evs = [
-      "pointerdown", "touchstart", "touchend", "click",
-      "keydown", "scroll", "wheel", "pointermove",
-    ];
-    evs.forEach((ev) =>
-      window.addEventListener(ev, unlockAudio, { passive: true })
-    );
-    // Also try once on mount in case the navigation itself counts
-    // as a transient user activation (some mobile browsers honor that).
+  const handleAnswer = () => {
+    if (answered) return;
     unlockAudio();
-    return () =>
-      evs.forEach((ev) => window.removeEventListener(ev, unlockAudio));
-  }, []);
+    setAnswered(true);
+  };
 
-  // Auto-paced reveal — starts immediately, no tap required.
+  // Auto-paced reveal — only starts AFTER the "call" is answered.
   useEffect(() => {
+    if (!answered) return;
     const times = [900, 1100, 1500, 1200];
     if (step >= times.length) return;
     const timer = setTimeout(() => {
@@ -39,7 +30,7 @@ export default function IdGateScene({ onUnlock }) {
       setStep(next);
     }, times[step]);
     return () => clearTimeout(timer);
-  }, [step]);
+  }, [step, answered]);
 
   const showHisInitialTyping = step === 0;
   const showHisQ = step >= 1;
@@ -75,6 +66,56 @@ export default function IdGateScene({ onUnlock }) {
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.9 }}
     >
+      {!answered && (
+        <motion.div
+          className="incoming-call"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, scale: 1.02 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="incoming-call-meta">
+            <motion.div
+              className="incoming-call-status"
+              animate={{ opacity: [0.55, 1, 0.55] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            >
+              מתקשר אלייך…
+            </motion.div>
+            <div className="incoming-call-name">
+              לב שלי<span className="incoming-call-heart">❤️</span>
+            </div>
+            <div className="incoming-call-sub">WhatsApp שיחת קול</div>
+          </div>
+
+          <motion.div
+            className="incoming-call-avatar"
+            animate={{ scale: [1, 1.06, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <span className="incoming-call-heartbig">❤️</span>
+            <span className="incoming-call-ring incoming-call-ring-1" />
+            <span className="incoming-call-ring incoming-call-ring-2" />
+          </motion.div>
+
+          <div className="incoming-call-actions">
+            <button
+              className="call-btn call-btn-answer"
+              onClick={handleAnswer}
+              aria-label="ענה"
+            >
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden>
+                <path
+                  d="M6.6 10.8c1.4 2.8 3.7 5.1 6.5 6.5l2.2-2.2c.3-.3.7-.4 1-.3 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1H7c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.3 0 .7-.3 1l-2.2 2.3z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+            <div className="call-btn-label">ענה</div>
+          </div>
+        </motion.div>
+      )}
+
       <motion.div
         className={`chat-window2 ${unlocking ? "is-success" : ""}`}
         initial={{ opacity: 0, y: 30, scale: 0.97 }}
