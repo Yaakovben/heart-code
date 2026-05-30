@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Howl, Howler } from "howler";
 import IdGateScene from "./components/IdGateScene";
 import LetterScene from "./components/LetterScene";
 import VideoScene from "./components/VideoScene";
@@ -8,159 +7,108 @@ import Particles from "./components/Particles";
 import { localMusicUrl, localVideoUrl } from "./lib/demoAssets";
 import { loadFont } from "./components/HandwritingCanvas";
 
+const TARGET_VOLUME = 0.7;
+const FADE_DURATION_MS = 1200;
+const FADE_DOWN_MS = 200;
+
 export default function App() {
   const [stage, setStage] = useState("gate");
   const [muted, setMuted] = useState(false);
-  const soundRef = useRef(null);
+  // Native <audio> ref — using the exact pipeline the working VideoScene
+  // audio uses on this iPhone. No Howler, no Web Audio, no AudioContext.
+  const audioRef = useRef(null);
+  const fadeRafRef = useRef(null);
 
-  // Fully parse the handwriting font during the gate, not on letter mount.
-  // loadFont() is a singleton in HandwritingCanvas — fetching here populates
-  // the cached promise so HandwritingCanvas sees the font as already-loaded
-  // and starts the reveal animation instantly.
   useEffect(() => {
     loadFont().catch(() => {});
   }, []);
 
-  // Warm the MP3 + video in the browser cache from the very first paint, so
-  // by the time the user reaches each scene the file is already downloaded.
-  // We use plain fetch rather than a hidden <video preload> because some
-  // mobile browsers autoplay muted preload videos and the audio track would
-  // bleed in alongside the music. fetch is silent and equally cache-warming.
   useEffect(() => {
     fetch(localMusicUrl).catch(() => {});
     fetch(localVideoUrl).catch(() => {});
   }, []);
 
-  // Create the Howl and start it (silently, volume:0) on the FIRST user
-  // gesture — typing in the gate, tapping, anything. This guarantees:
-  //   1. Howler's AudioContext is created inside a gesture window (required
-  //      by iOS), so subsequent play() / resume() calls work even if they
-  //      fire later from a setTimeout.
-  //   2. The audio source is already streaming by the time the letter scene
-  //      mounts, so the fade-up is instant — no startup delay.
+  // Start the audio on the first user gesture (typing, tap, click).
+  // Native <audio>.play() inside a gesture handler is the most universally
+  // compatible pattern — same pipeline as <video>, which works for the user.
   useEffect(() => {
-    const initAudio = () => {
-      // Only create if there's no live Howl yet. After a bfcache restore the
-      // previous Howl is unloaded and soundRef is reset to null, so the
-      // next gesture creates a fresh one cleanly.
-      if (soundRef.current) return;
-      const s = new Howl({
-        src: [localMusicUrl],
-        loop: true,
-        volume: 0,
-        // html5: true — go through a native <audio> element, the same path
-        // the VideoScene uses for its working audio. The earlier Web Audio
-        // approach (html5: false) was silently dropped by iOS Safari on
-        // this user's device. <audio> goes through the standard media
-        // pipeline that's already proven to work for them.
-        html5: true,
-        onload: function () {
-          if (!this.playing()) this.play();
-        },
-      });
-      soundRef.current = s;
-      s.play();
+    const start = () => {
+      const a = audioRef.current;
+      if (!a || !a.paused) return;
+      a.volume = 0;
+      a.play().catch(() => {});
     };
     const evs = ["pointerdown", "touchstart", "click", "keydown"];
-    evs.forEach((ev) => window.addEventListener(ev, initAudio, { passive: true, once: false }));
-    return () => evs.forEach((ev) => window.removeEventListener(ev, initAudio));
+    evs.forEach((ev) => window.addEventListener(ev, start, { passive: true }));
+    return () => evs.forEach((ev) => window.removeEventListener(ev, start));
   }, []);
 
-  // Volume logic — runs every time stage or muted changes. NEVER calls
-  // play() here: initAudio (gesture) starts the single sound, onShow
-  // (visibility) resumes it. Calling play() again from here spawns a parallel
-  // sound instance in Howler — the "old song + new song" doubling the user
-  // reported when navigating video → letter.
+  // Volume control on stage / mute changes — manual rAF fade so we don't
+  // depend on any third-party audio library at all.
   useEffect(() => {
     if (stage === "gate") return;
-    const s = soundRef.current;
-    if (!s) return;
-    s.mute(muted);
-    const target = stage === "video" ? 0 : 0.7;
-    const cur = s.volume();
-    // Skip the fade entirely when we're already at target — otherwise a re-render
-    // would cancel an in-flight fade and immediately restart it, audible as a
-    // flutter. The previous explicit volume() snap is what caused that bug.
-    if (Math.abs(cur - target) > 0.001) {
-      s.fade(cur, target, target === 0 ? 180 : 1200);
-    }
+    const a = audioRef.current;
+    if (!a) return;
+    a.muted = muted;
+    // If the gesture-bound play got blocked (e.g. autoplay policy), retry it
+    // now — this useEffect runs in response to a user-initiated stage change.
+    if (a.paused) a.play().catch(() => {});
+
+    const target = stage === "video" ? 0 : TARGET_VOLUME;
+    if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
+    const from = a.volume;
+    if (Math.abs(from - target) < 0.001) return;
+    const dur = target === 0 ? FADE_DOWN_MS : FADE_DURATION_MS;
+    const t0 = performance.now();
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      try { a.volume = from + (target - from) * p; } catch {}
+      if (p < 1) fadeRafRef.current = requestAnimationFrame(tick);
+      else fadeRafRef.current = null;
+    };
+    fadeRafRef.current = requestAnimationFrame(tick);
   }, [stage, muted]);
 
-  useEffect(() => () => soundRef.current?.unload(), []);
-
-  // Robust recovery from iOS interruptions (phone calls, screen-off, tab-switch).
-  // The AudioContext gets suspended and Howler's playback halts; we have to
-  // retry play() multiple times after resume() because iOS occasionally fails
-  // the first attempt silently.
+  // Backgrounding / focus recovery — native <audio> handles most of this
+  // itself, but iOS sometimes pauses on tab-hide without auto-resuming.
   useEffect(() => {
-    const onHide = () => {
-      const s = soundRef.current;
-      if (s && s.playing()) s.pause();
-    };
-    const tryRecover = (attempts = 0) => {
-      const s = soundRef.current;
-      if (!s || muted || stage === "gate" || stage === "video") return;
-      const ctx = Howler.ctx;
-      const doPlay = () => {
-        if (s.playing()) return;
-        try { s.play(); } catch {}
-        if (!s.playing() && attempts < 6) {
-          setTimeout(() => tryRecover(attempts + 1), 180);
-        }
-      };
-      if (ctx && ctx.state === "suspended") {
-        ctx.resume().then(doPlay).catch(doPlay);
-      } else {
-        doPlay();
-      }
-    };
-    // iOS bfcache: when the page is restored from the back-forward cache
-    // (re-open, swipe-back, etc.) the previous AudioContext is dead. Unload
-    // the stale Howl so the next gesture creates a fresh one.
-    const onShow = (e) => {
-      if (e && e.persisted) {
-        try { soundRef.current?.unload(); } catch {}
-        soundRef.current = null;
-      }
-      tryRecover(0);
+    const onShow = () => {
+      const a = audioRef.current;
+      if (!a || muted || stage === "gate" || stage === "video") return;
+      if (a.paused) a.play().catch(() => {});
     };
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") onHide();
-      else onShow();
+      if (document.visibilityState === "visible") onShow();
     };
-
-    // Also recover on the user's next tap — covers cases where the
-    // visibility events don't fire (e.g. some Android WebViews).
-    const onAnyTap = () => {
-      const s = soundRef.current;
-      if (!s) return;
-      const ctx = Howler.ctx;
-      if (ctx && ctx.state !== "running") ctx.resume().catch(() => {});
-      if (!s.playing() && !muted && stage !== "gate" && stage !== "video") {
-        try { s.play(); } catch {}
-      }
-    };
-
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pageshow", onShow);
-    window.addEventListener("pagehide", onHide);
-    window.addEventListener("blur", onHide);
     window.addEventListener("focus", onShow);
-    window.addEventListener("pointerdown", onAnyTap, { passive: true });
-    window.addEventListener("touchstart", onAnyTap, { passive: true });
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pageshow", onShow);
-      window.removeEventListener("pagehide", onHide);
-      window.removeEventListener("blur", onHide);
       window.removeEventListener("focus", onShow);
-      window.removeEventListener("pointerdown", onAnyTap);
-      window.removeEventListener("touchstart", onAnyTap);
     };
   }, [stage, muted]);
 
+  useEffect(() => () => {
+    if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
+  }, []);
+
   return (
     <div className="app-shell">
+      {/* Single, native <audio> for the background music — same pipeline as
+          the VideoScene <video> the user has confirmed works on iPhone. */}
+      <audio
+        ref={audioRef}
+        src={localMusicUrl}
+        loop
+        playsInline
+        preload="auto"
+        // @ts-ignore — iOS-specific, still respected by older Safari.
+        webkit-playsinline="true"
+        aria-hidden
+        style={{ display: "none" }}
+      />
       <Particles />
 
       {stage !== "gate" && (
