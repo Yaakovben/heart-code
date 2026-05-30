@@ -12,7 +12,6 @@ export default function App() {
   const [stage, setStage] = useState("gate");
   const [muted, setMuted] = useState(false);
   const soundRef = useRef(null);
-  const sessionVideoRef = useRef(null);
 
   // Fully parse the handwriting font during the gate, not on letter mount.
   // loadFont() is a singleton in HandwritingCanvas — fetching here populates
@@ -41,15 +40,6 @@ export default function App() {
   //      mounts, so the fade-up is instant — no startup delay.
   useEffect(() => {
     const initAudio = () => {
-      // Kick the hidden session video on the same gesture — iOS sometimes
-      // blocks even muted autoplay, and the page only gains "media playback"
-      // status (which lets Web Audio bypass the silent switch) while a
-      // <video> is actively playing.
-      const sv = sessionVideoRef.current;
-      if (sv && sv.paused) {
-        sv.muted = true;
-        sv.play().catch(() => {});
-      }
       // Only create if there's no live Howl yet. After a bfcache restore the
       // previous Howl is unloaded and soundRef is reset to null, so the
       // next gesture creates a fresh one cleanly.
@@ -58,14 +48,12 @@ export default function App() {
         src: [localMusicUrl],
         loop: true,
         volume: 0,
-        // html5: false (Web Audio) is required for iPhone — the physical
-        // silent switch mutes HTML5 <audio> elements but does NOT mute Web
-        // Audio, so music plays even when the user's phone is on silent.
-        html5: false,
-        // Defensive: if the buffer is still loading when play() is called,
-        // Howler queues it. onload guarantees we kick playback once decode
-        // finishes — without this, a slow iPhone decode could leave the
-        // music silently queued forever.
+        // html5: true — go through a native <audio> element, the same path
+        // the VideoScene uses for its working audio. The earlier Web Audio
+        // approach (html5: false) was silently dropped by iOS Safari on
+        // this user's device. <audio> goes through the standard media
+        // pipeline that's already proven to work for them.
+        html5: true,
         onload: function () {
           if (!this.playing()) this.play();
         },
@@ -173,31 +161,6 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {/* iOS-silent-switch workaround: a muted <video playsinline> that is
-          actively playing puts iOS into a "media playback" audio session,
-          where Web Audio (our background music) bypasses the physical silent
-          switch. Without this, iPhones on silent hear nothing. The element
-          is invisible and muted so it contributes no audio of its own. */}
-      <video
-        ref={sessionVideoRef}
-        src={localVideoUrl}
-        muted
-        autoPlay
-        loop
-        playsInline
-        aria-hidden
-        // @ts-ignore — iOS-specific attribute, still respected by older Safari.
-        webkit-playsinline="true"
-        style={{
-          position: "fixed",
-          left: 0,
-          top: 0,
-          width: 1,
-          height: 1,
-          opacity: 0,
-          pointerEvents: "none",
-        }}
-      />
       <Particles />
 
       {stage !== "gate" && (
