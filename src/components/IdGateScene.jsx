@@ -68,50 +68,49 @@ export default function IdGateScene({ onUnlock }) {
     >
       {!answered && (
         <motion.div
-          className="incoming-call"
+          className="prep-gate"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.02 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="incoming-call-meta">
+          <div className="prep-gate-bg" aria-hidden />
+          <div className="prep-gate-content">
+            <motion.span
+              className="prep-gate-heart"
+              animate={{ scale: [1, 1.12, 1] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              aria-hidden
+            >
+              ❤️
+            </motion.span>
+            <motion.h2
+              className="prep-gate-question"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+            >
+              מוכנה לזיהוי קצר?
+            </motion.h2>
             <motion.div
-              className="incoming-call-status"
-              animate={{ opacity: [0.55, 1, 0.55] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              className="prep-gate-volume-hint"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.75 }}
+              transition={{ delay: 0.8, duration: 0.8 }}
             >
-              מתקשר אלייך…
+              🔊 כדאי להעלות את הווליום
             </motion.div>
-            <div className="incoming-call-name">
-              לב שלי<span className="incoming-call-heart">❤️</span>
-            </div>
-            <div className="incoming-call-sub">WhatsApp שיחת קול</div>
-          </div>
-
-          <motion.div
-            className="incoming-call-avatar"
-            animate={{ scale: [1, 1.06, 1] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <span className="incoming-call-heartbig">❤️</span>
-            <span className="incoming-call-ring incoming-call-ring-1" />
-            <span className="incoming-call-ring incoming-call-ring-2" />
-          </motion.div>
-
-          <div className="incoming-call-actions">
-            <button
-              className="call-btn call-btn-answer"
+            <motion.button
+              className="prep-gate-yes"
               onClick={handleAnswer}
-              aria-label="ענה"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden>
-                <path
-                  d="M6.6 10.8c1.4 2.8 3.7 5.1 6.5 6.5l2.2-2.2c.3-.3.7-.4 1-.3 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1H7c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.3 0 .7-.3 1l-2.2 2.3z"
-                  fill="currentColor"
-                />
-              </svg>
-            </button>
-            <div className="call-btn-label">ענה</div>
+              כן
+            </motion.button>
           </div>
         </motion.div>
       )}

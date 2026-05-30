@@ -12,10 +12,6 @@ export default function App() {
   const [stage, setStage] = useState("gate");
   const [muted, setMuted] = useState(false);
   const soundRef = useRef(null);
-  // Always resume the SAME sound instance (Howler can host multiple). Calling
-  // s.play() with no arg creates a brand-new sound — that's the doubling we
-  // kept chasing. s.play(soundId) only resumes the existing one.
-  const soundIdRef = useRef(null);
 
   // Fully parse the handwriting font during the gate, not on letter mount.
   // loadFont() is a singleton in HandwritingCanvas — fetching here populates
@@ -51,10 +47,20 @@ export default function App() {
         src: [localMusicUrl],
         loop: true,
         volume: 0,
+        // html5: false (Web Audio) is required for iPhone — the physical
+        // silent switch mutes HTML5 <audio> elements but does NOT mute Web
+        // Audio, so music plays even when the user's phone is on silent.
         html5: false,
+        // Defensive: if the buffer is still loading when play() is called,
+        // Howler queues it. onload guarantees we kick playback once decode
+        // finishes — without this, a slow iPhone decode could leave the
+        // music silently queued forever.
+        onload: function () {
+          if (!this.playing()) this.play();
+        },
       });
       soundRef.current = s;
-      soundIdRef.current = s.play();
+      s.play();
     };
     const evs = ["pointerdown", "touchstart", "click", "keydown"];
     evs.forEach((ev) => window.addEventListener(ev, initAudio, { passive: true, once: false }));
@@ -71,7 +77,7 @@ export default function App() {
     const s = soundRef.current;
     if (!s) return;
     s.mute(muted);
-    const target = stage === "video" ? 0 : 0.4;
+    const target = stage === "video" ? 0 : 0.7;
     const cur = s.volume();
     // Skip the fade entirely when we're already at target — otherwise a re-render
     // would cancel an in-flight fade and immediately restart it, audible as a
@@ -90,20 +96,16 @@ export default function App() {
   useEffect(() => {
     const onHide = () => {
       const s = soundRef.current;
-      const id = soundIdRef.current;
-      if (s && id && s.playing(id)) s.pause(id);
+      if (s && s.playing()) s.pause();
     };
     const tryRecover = (attempts = 0) => {
       const s = soundRef.current;
-      const id = soundIdRef.current;
-      if (!s || !id || muted || stage === "gate" || stage === "video") return;
+      if (!s || muted || stage === "gate" || stage === "video") return;
       const ctx = Howler.ctx;
       const doPlay = () => {
-        if (s.playing(id)) return;
-        // Always resume the SAME sound id — never s.play() with no arg, which
-        // spawns a parallel instance.
-        try { s.play(id); } catch {}
-        if (!s.playing(id) && attempts < 6) {
+        if (s.playing()) return;
+        try { s.play(); } catch {}
+        if (!s.playing() && attempts < 6) {
           setTimeout(() => tryRecover(attempts + 1), 180);
         }
       };
@@ -123,12 +125,11 @@ export default function App() {
     // visibility events don't fire (e.g. some Android WebViews).
     const onAnyTap = () => {
       const s = soundRef.current;
-      const id = soundIdRef.current;
-      if (!s || !id) return;
+      if (!s) return;
       const ctx = Howler.ctx;
       if (ctx && ctx.state !== "running") ctx.resume().catch(() => {});
-      if (!s.playing(id) && !muted && stage !== "gate" && stage !== "video") {
-        try { s.play(id); } catch {}
+      if (!s.playing() && !muted && stage !== "gate" && stage !== "video") {
+        try { s.play(); } catch {}
       }
     };
 
