@@ -1,102 +1,121 @@
-// Synthesized chat sounds — no external assets.
-// Browsers may block until first user gesture; calls fail silently.
+// Chat sounds — synthesized once into WAV blobs, then played via plain
+// HTML5 <audio>. This is the exact pipeline iOS Safari is friendliest to
+// (same as the background music), and avoids the Web Audio suspension
+// issues that left the "sent" ping silent on iPhone.
 
-let ctx = null;
-let keepAlive = null;
+let sentAudio = null;
+let errorAudio = null;
+let primed = false;
 
-function getCtx() {
-  if (!ctx) {
-    try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch {}
+// ---------- WAV encoder (mono, 16-bit PCM) ----------
+function encodeWav(samples, sampleRate) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  const writeStr = (off, s) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);            // PCM chunk size
+  view.setUint16(20, 1, true);             // PCM
+  view.setUint16(22, 1, true);             // 1 channel
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);             // block align
+  view.setUint16(34, 16, true);            // bits per sample
+  writeStr(36, "data");
+  view.setUint32(40, samples.length * 2, true);
+  let off = 44;
+  for (let i = 0; i < samples.length; i++, off += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
   }
-  return ctx;
+  return new Blob([view], { type: "audio/wav" });
 }
 
-// Call directly from a user gesture (touchstart / click / keydown).
-// 1) resumes the AudioContext;
-// 2) plays a silent buffer (the unlock trick for iOS Safari);
-// 3) starts a SILENT oscillator that stays running forever so iOS never
-//    auto-suspends the context again later (which used to drop the chat
-//    sounds after the gate's "כן" had already passed).
+function renderSamples(sampleRate, duration, build) {
+  const n = Math.floor(sampleRate * duration);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) out[i] = build(i / sampleRate);
+  return out;
+}
+
+// "Sent" — bright two-tone ting (1320Hz + 2200Hz, exponential envelope).
+function makeSentBuffer() {
+  const sr = 44100;
+  const dur = 0.22;
+  const partials = [
+    { freq: 1320, peak: 0.35, len: 0.20, delay: 0 },
+    { freq: 2200, peak: 0.22, len: 0.18, delay: 0.025 },
+  ];
+  return renderSamples(sr, dur, (t) => {
+    let v = 0;
+    for (const { freq, peak, len, delay } of partials) {
+      const lt = t - delay;
+      if (lt < 0 || lt > len) continue;
+      // exp attack (0→peak in 8ms) then exp decay
+      const env = lt < 0.008
+        ? (lt / 0.008) * peak
+        : peak * Math.exp(-(lt - 0.008) * 12);
+      v += Math.sin(2 * Math.PI * freq * lt) * env;
+    }
+    return v;
+  });
+}
+
+// "Error" — low descending blip.
+function makeErrorBuffer() {
+  const sr = 44100;
+  const dur = 0.28;
+  return renderSamples(sr, dur, (t) => {
+    const freq = 380 * Math.exp(-t * 3); // 380→~220
+    const env = t < 0.02
+      ? (t / 0.02) * 0.18
+      : 0.18 * Math.exp(-(t - 0.02) * 8);
+    return Math.sin(2 * Math.PI * freq * t) * env;
+  });
+}
+
+// Build the audio elements ONCE on first user gesture.
 export function unlockAudio() {
-  const c = getCtx();
-  if (!c) return;
-  if (c.state === "suspended") c.resume().catch(() => {});
-  try {
-    const buf = c.createBuffer(1, 1, 22050);
-    const src = c.createBufferSource();
-    src.buffer = buf;
-    src.connect(c.destination);
-    src.start(0);
-  } catch {}
-  // Silent keep-alive oscillator — prevents iOS from auto-suspending the
-  // context between the gate tap and the first chat bubble's sound.
-  if (!keepAlive) {
-    try {
-      const osc = c.createOscillator();
-      const gain = c.createGain();
-      gain.gain.value = 0; // truly silent
-      osc.connect(gain).connect(c.destination);
-      osc.start();
-      keepAlive = osc;
-    } catch {}
-  }
-}
-
-// Play a sound — if the context is suspended (iOS interruption, late call,
-// etc.) try to resume it first, then play. Never drops silently anymore.
-function play(inner) {
-  const c = getCtx();
-  if (!c) return;
-  if (c.state === "running") {
-    try { inner(c); } catch {}
+  if (primed) {
+    // Re-prime if iOS suspended things between uses.
+    sentAudio?.load();
+    errorAudio?.load();
     return;
   }
-  // Suspended → try to wake it, then play.
-  c.resume().then(() => {
-    try { inner(c); } catch {}
-  }).catch(() => {});
+  primed = true;
+  try {
+    const sentUrl = URL.createObjectURL(encodeWav(makeSentBuffer(), 44100));
+    const errorUrl = URL.createObjectURL(encodeWav(makeErrorBuffer(), 44100));
+    sentAudio = new Audio(sentUrl);
+    sentAudio.preload = "auto";
+    sentAudio.volume = 1;
+    errorAudio = new Audio(errorUrl);
+    errorAudio.preload = "auto";
+    errorAudio.volume = 1;
+    // Touch play() inside the gesture so iOS marks them as user-activated.
+    sentAudio.muted = true;
+    errorAudio.muted = true;
+    const p1 = sentAudio.play();
+    const p2 = errorAudio.play();
+    const settle = (a) => { try { a.pause(); a.currentTime = 0; a.muted = false; } catch {} };
+    if (p1?.then) p1.then(() => settle(sentAudio)).catch(() => settle(sentAudio));
+    else settle(sentAudio);
+    if (p2?.then) p2.then(() => settle(errorAudio)).catch(() => settle(errorAudio));
+    else settle(errorAudio);
+  } catch {}
 }
 
-// Sent — bright two-tone "ting".
-export function playSent() {
-  play((c) => {
-    const now = c.currentTime;
-    const partials = [
-      { freq: 1320, peak: 0.35, dur: 0.20, delay: 0 },
-      { freq: 2200, peak: 0.22, dur: 0.18, delay: 0.025 },
-    ];
-    for (const { freq, peak, dur, delay } of partials) {
-      const t0 = now + delay;
-      const osc = c.createOscillator();
-      const gain = c.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.008);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      osc.connect(gain).connect(c.destination);
-      osc.start(t0);
-      osc.stop(t0 + dur + 0.02);
-    }
-  });
+function fire(a) {
+  if (!a) return;
+  try {
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  } catch {}
 }
 
-// Soft error blip (low descending tone)
-export function playError() {
-  play((c) => {
-    const now = c.currentTime;
-    const osc = c.createOscillator();
-    const gain = c.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(380, now);
-    osc.frequency.exponentialRampToValueAtTime(220, now + 0.18);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.1, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
-    osc.connect(gain).connect(c.destination);
-    osc.start(now);
-    osc.stop(now + 0.25);
-  });
-}
+export function playSent() { fire(sentAudio); }
+export function playError() { fire(errorAudio); }
