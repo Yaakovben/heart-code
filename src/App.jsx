@@ -28,31 +28,47 @@ export default function App() {
     fetch(localVideoUrl).catch(() => {});
   }, []);
 
-  // Start the audio on the first user gesture (typing, tap, click).
-  // Native <audio>.play() inside a gesture handler is the most universally
-  // compatible pattern — same pipeline as <video>, which works for the user.
+  // Unlock the audio element on the first user gesture WITHOUT actually
+  // playing music yet. We play→pause inside the gesture to satisfy iOS
+  // autoplay policy; subsequent play() (when stage leaves gate) is then
+  // allowed and stays in sync with the visuals.
   useEffect(() => {
+    let unlocked = false;
     const start = () => {
+      if (unlocked) return;
       const a = audioRef.current;
-      if (!a || !a.paused) return;
+      if (!a) return;
+      unlocked = true;
       a.volume = 0;
-      a.play().catch(() => {});
+      a.muted = true;
+      const p = a.play();
+      const settle = () => {
+        try { a.pause(); a.currentTime = 0; a.muted = false; } catch {}
+      };
+      if (p && typeof p.then === "function") p.then(settle).catch(settle);
+      else settle();
     };
     const evs = ["pointerdown", "touchstart", "click", "keydown"];
     evs.forEach((ev) => window.addEventListener(ev, start, { passive: true }));
     return () => evs.forEach((ev) => window.removeEventListener(ev, start));
   }, []);
 
-  // Volume control on stage / mute changes — manual rAF fade so we don't
-  // depend on any third-party audio library at all.
+  // Volume control on stage / mute changes — manual rAF fade.
   useEffect(() => {
     if (stage === "gate") return;
     const a = audioRef.current;
     if (!a) return;
     a.muted = muted;
-    // If the gesture-bound play got blocked (e.g. autoplay policy), retry it
-    // now — this useEffect runs in response to a user-initiated stage change.
-    if (a.paused) a.play().catch(() => {});
+
+    // Resilient play: retry up to 6 times if a slow buffer / interruption
+    // causes the first play() to reject. Each retry is a real .play() call.
+    const ensurePlaying = (attempts = 0) => {
+      if (!a.paused) return;
+      a.play().catch(() => {
+        if (attempts < 6) setTimeout(() => ensurePlaying(attempts + 1), 200);
+      });
+    };
+    ensurePlaying();
 
     const target = stage === "video" ? 0 : TARGET_VOLUME;
     if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
@@ -67,6 +83,22 @@ export default function App() {
       else fadeRafRef.current = null;
     };
     fadeRafRef.current = requestAnimationFrame(tick);
+  }, [stage, muted]);
+
+  // Recovery on every user tap — if audio is paused for any reason (iOS
+  // interruption, lost focus, etc.) the next touch wakes it up.
+  useEffect(() => {
+    const onAnyTap = () => {
+      const a = audioRef.current;
+      if (!a || muted || stage === "gate" || stage === "video") return;
+      if (a.paused) a.play().catch(() => {});
+    };
+    window.addEventListener("pointerdown", onAnyTap, { passive: true });
+    window.addEventListener("touchstart", onAnyTap, { passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", onAnyTap);
+      window.removeEventListener("touchstart", onAnyTap);
+    };
   }, [stage, muted]);
 
   // Backgrounding / focus recovery — native <audio> handles most of this
