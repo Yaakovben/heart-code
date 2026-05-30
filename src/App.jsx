@@ -6,6 +6,7 @@ import VideoScene from "./components/VideoScene";
 import Particles from "./components/Particles";
 import { localMusicUrl, localVideoUrl } from "./lib/demoAssets";
 import { loadFont } from "./components/HandwritingCanvas";
+import { unlockAudio as unlockChatAudio } from "./lib/chatSounds";
 
 const TARGET_VOLUME = 0.7;
 const FADE_DURATION_MS = 1200;
@@ -35,6 +36,9 @@ export default function App() {
   useEffect(() => {
     let unlocked = false;
     const start = () => {
+      // Always unlock the chat-sound Web Audio context (synthesized pings)
+      // on every user gesture — keeps it alive even on later iOS suspends.
+      unlockChatAudio();
       if (unlocked) return;
       const a = audioRef.current;
       if (!a) return;

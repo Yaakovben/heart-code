@@ -2,6 +2,7 @@
 // Browsers may block until first user gesture; calls fail silently.
 
 let ctx = null;
+let keepAlive = null;
 
 function getCtx() {
   if (!ctx) {
@@ -13,8 +14,11 @@ function getCtx() {
 }
 
 // Call directly from a user gesture (touchstart / click / keydown).
-// Resumes the context AND plays a silent 1-sample buffer — the trick most
-// mobile browsers (especially iOS Safari) need to fully unlock audio.
+// 1) resumes the AudioContext;
+// 2) plays a silent buffer (the unlock trick for iOS Safari);
+// 3) starts a SILENT oscillator that stays running forever so iOS never
+//    auto-suspends the context again later (which used to drop the chat
+//    sounds after the gate's "כן" had already passed).
 export function unlockAudio() {
   const c = getCtx();
   if (!c) return;
@@ -26,6 +30,18 @@ export function unlockAudio() {
     src.connect(c.destination);
     src.start(0);
   } catch {}
+  // Silent keep-alive oscillator — prevents iOS from auto-suspending the
+  // context between the gate tap and the first chat bubble's sound.
+  if (!keepAlive) {
+    try {
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      gain.gain.value = 0; // truly silent
+      osc.connect(gain).connect(c.destination);
+      osc.start();
+      keepAlive = osc;
+    } catch {}
+  }
 }
 
 // Play a sound — if the context is suspended (iOS interruption, late call,
