@@ -42,11 +42,11 @@ export default function App() {
       const a = audioRef.current;
       if (!a) return;
       unlocked = true;
-      // Start the music playing at *volume 0* — never pause, never unmute
-      // a delayed promise. This avoids the iOS race where play→pause
-      // accidentally lets a chunk of audio through during the gate.
-      // The volume effect fades it in once the user enters the letter.
-      a.muted = false;
+      // iOS Safari IGNORES audio.volume — only `muted` works.
+      // Start the music muted and playing; the volume effect unmutes
+      // (instantly, since fades won't work on iOS either) when the
+      // user reaches the letter scene.
+      a.muted = true;
       a.volume = 0;
       a.play().catch(() => {});
     };
@@ -55,36 +55,24 @@ export default function App() {
     return () => evs.forEach((ev) => window.removeEventListener(ev, start));
   }, []);
 
-  // Volume control on stage / mute changes — manual rAF fade.
+  // Stage-driven mute control. iOS ignores `.volume`, so we toggle `.muted`
+  // (which IS respected on iOS). Music is silent during gate + video,
+  // audible only in the letter scene.
   useEffect(() => {
-    if (stage === "gate") return;
     const a = audioRef.current;
     if (!a) return;
-    a.muted = muted;
-
-    // Resilient play: retry up to 6 times if a slow buffer / interruption
-    // causes the first play() to reject. Each retry is a real .play() call.
-    const ensurePlaying = (attempts = 0) => {
-      if (!a.paused) return;
-      a.play().catch(() => {
-        if (attempts < 6) setTimeout(() => ensurePlaying(attempts + 1), 200);
-      });
-    };
-    ensurePlaying();
-
-    const target = stage === "video" ? 0 : TARGET_VOLUME;
-    if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
-    const from = a.volume;
-    if (Math.abs(from - target) < 0.001) return;
-    const dur = target === 0 ? FADE_DOWN_MS : FADE_DURATION_MS;
-    const t0 = performance.now();
-    const tick = (t) => {
-      const p = Math.min(1, (t - t0) / dur);
-      try { a.volume = from + (target - from) * p; } catch {}
-      if (p < 1) fadeRafRef.current = requestAnimationFrame(tick);
-      else fadeRafRef.current = null;
-    };
-    fadeRafRef.current = requestAnimationFrame(tick);
+    const shouldBeAudible = stage === "letter" && !muted;
+    a.muted = !shouldBeAudible;
+    a.volume = TARGET_VOLUME;
+    if (shouldBeAudible) {
+      const ensurePlaying = (attempts = 0) => {
+        if (!a.paused) return;
+        a.play().catch(() => {
+          if (attempts < 6) setTimeout(() => ensurePlaying(attempts + 1), 200);
+        });
+      };
+      ensurePlaying();
+    }
   }, [stage, muted]);
 
   // Recovery on every user tap — if audio is paused for any reason (iOS
