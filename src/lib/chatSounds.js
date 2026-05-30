@@ -28,16 +28,24 @@ export function unlockAudio() {
   } catch {}
 }
 
-function isReady() {
-  return getCtx()?.state === "running";
+// Play a sound — if the context is suspended (iOS interruption, late call,
+// etc.) try to resume it first, then play. Never drops silently anymore.
+function play(inner) {
+  const c = getCtx();
+  if (!c) return;
+  if (c.state === "running") {
+    try { inner(c); } catch {}
+    return;
+  }
+  // Suspended → try to wake it, then play.
+  c.resume().then(() => {
+    try { inner(c); } catch {}
+  }).catch(() => {});
 }
 
-// Sent — bright two-tone "ting". Only plays in real-time; never queued, so
-// late playback can't desync from the on-screen action.
+// Sent — bright two-tone "ting".
 export function playSent() {
-  if (!isReady()) return;
-  try {
-    const c = getCtx();
+  play((c) => {
     const now = c.currentTime;
     const partials = [
       { freq: 1320, peak: 0.35, dur: 0.20, delay: 0 },
@@ -56,14 +64,12 @@ export function playSent() {
       osc.start(t0);
       osc.stop(t0 + dur + 0.02);
     }
-  } catch {}
+  });
 }
 
 // Soft error blip (low descending tone)
 export function playError() {
-  if (!isReady()) return;
-  try {
-    const c = getCtx();
+  play((c) => {
     const now = c.currentTime;
     const osc = c.createOscillator();
     const gain = c.createGain();
@@ -76,5 +82,5 @@ export function playError() {
     osc.connect(gain).connect(c.destination);
     osc.start(now);
     osc.stop(now + 0.25);
-  } catch {}
+  });
 }

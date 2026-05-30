@@ -92,14 +92,6 @@ export default function IdGateScene({ onUnlock }) {
             >
               מוכנה לזיהוי קצר?
             </motion.h2>
-            <motion.div
-              className="prep-gate-volume-hint"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.75 }}
-              transition={{ delay: 0.8, duration: 0.8 }}
-            >
-              🔊 כדאי להעלות את הווליום
-            </motion.div>
             <motion.button
               className="prep-gate-yes"
               onClick={handleAnswer}
