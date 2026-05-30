@@ -153,6 +153,30 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {/* iOS-silent-switch workaround: a muted <video playsinline> that is
+          actively playing puts iOS into a "media playback" audio session,
+          where Web Audio (our background music) bypasses the physical silent
+          switch. Without this, iPhones on silent hear nothing. The element
+          is invisible and muted so it contributes no audio of its own. */}
+      <video
+        src={localVideoUrl}
+        muted
+        autoPlay
+        loop
+        playsInline
+        aria-hidden
+        // @ts-ignore — iOS-specific attribute, still respected by older Safari.
+        webkit-playsinline="true"
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          width: 1,
+          height: 1,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+      />
       <Particles />
 
       {stage !== "gate" && (
