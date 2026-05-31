@@ -181,43 +181,60 @@ export default function VideoScene() {
           style={{ display: hasVideo ? "block" : "none" }}
         />
         {!hasVideo && (
-          <div className="v3-demo">
+          <div className="v3-state v3-state-error" role="alert">
             <motion.div
-              className="v3-play"
-              animate={{ scale: [1, 1.08, 1], opacity: [0.85, 1, 0.85] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="v3-state-heart v3-state-heart-error"
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 180, damping: 12 }}
             >
-              ▶
+              💔
             </motion.div>
-            <p>הסרטון שלך</p>
+            <div className="v3-state-title">אופס... משהו השתבש</div>
+            <div className="v3-state-sub">הסרטון לא הצליח להיטען. בדקי את החיבור ונסי שוב.</div>
+            <button
+              className="v3-state-retry"
+              onClick={() => {
+                setHasVideo(true);
+                setLoading(true);
+                setProgress(0);
+                const v = videoRef.current;
+                if (v) { try { v.load(); v.play().catch(() => {}); } catch {} }
+              }}
+            >
+              נסי שוב ❤
+            </button>
           </div>
         )}
         {hasVideo && loading && (
-          <div className="v3-loading" aria-live="polite">
-            <motion.div
-              className="v3-loading-spinner"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-            >
-              <svg viewBox="0 0 50 50" width="56" height="56" aria-hidden>
-                <circle cx="25" cy="25" r="20" fill="none"
-                  stroke="rgba(255,200,220,0.18)" strokeWidth="4" />
-                <circle cx="25" cy="25" r="20" fill="none"
-                  stroke="#ff7a9a" strokeWidth="4" strokeLinecap="round"
-                  strokeDasharray="90 200" />
-              </svg>
-            </motion.div>
-            <div className="v3-loading-text">
-              {progress > 0
-                ? `טוען את הסרטון... ${Math.round(progress * 100)}%`
-                : "טוען את הסרטון..."}
+          <div className="v3-state v3-state-loading" aria-live="polite">
+            <div className="v3-state-hearts" aria-hidden>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <motion.span
+                  key={i}
+                  className="v3-state-heart"
+                  animate={{
+                    y: [0, -10, 0],
+                    scale: [1, 1.15, 1],
+                    opacity: [0.85, 1, 0.85],
+                  }}
+                  transition={{
+                    duration: 1.6,
+                    repeat: Infinity,
+                    delay: i * 0.25,
+                    ease: "easeInOut",
+                  }}
+                >
+                  💗
+                </motion.span>
+              ))}
+            </div>
+            <div className="v3-state-title">
+              {progress > 0 ? `מכינה לך משהו מיוחד... ${Math.round(progress * 100)}%` : "מכינה לך משהו מיוחד..."}
             </div>
             {progress > 0 && (
-              <div className="v3-loading-bar">
-                <div
-                  className="v3-loading-bar-fill"
-                  style={{ width: `${Math.round(progress * 100)}%` }}
-                />
+              <div className="v3-state-bar">
+                <div className="v3-state-bar-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
               </div>
             )}
           </div>

@@ -2040,44 +2040,97 @@ body::after {
   background: #000;
   object-fit: contain;
 }
-.v3-loading {
+/* Loading / error overlay — soft, warm, romantic. */
+.v3-state {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  gap: 18px;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(
+      ellipse at center,
+      rgba(255, 180, 200, 0.25) 0%,
+      rgba(40, 10, 20, 0.85) 75%
+    ),
+    rgba(20, 5, 12, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 3;
-  pointer-events: none;
 }
-.v3-loading-spinner {
-  display: grid;
-  place-items: center;
-  filter: drop-shadow(0 0 14px rgba(255, 122, 154, 0.55));
+.v3-state-loading { pointer-events: none; }
+
+.v3-state-hearts {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
-.v3-loading-text {
-  font-family: "Heebo", "Inter", sans-serif;
-  font-size: clamp(0.9rem, 2.6vw, 1.05rem);
-  color: rgba(255, 220, 230, 0.95);
+.v3-state-heart {
+  display: inline-block;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  filter: drop-shadow(0 0 18px rgba(255, 120, 160, 0.7));
+}
+.v3-state-heart-error {
+  font-size: clamp(2.4rem, 8vw, 3.6rem);
+  filter: drop-shadow(0 0 22px rgba(255, 90, 130, 0.6));
+}
+
+.v3-state-title {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.05rem, 3.2vw, 1.3rem);
+  color: #fff7ec;
   letter-spacing: 0.02em;
+  text-shadow: 0 2px 14px rgba(255, 120, 160, 0.45);
 }
-.v3-loading-bar {
-  width: min(60%, 280px);
-  height: 4px;
+.v3-state-sub {
+  font-family: "Heebo", "Inter", sans-serif;
+  font-size: clamp(0.85rem, 2.4vw, 0.98rem);
+  color: rgba(255, 220, 230, 0.78);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.v3-state-bar {
+  width: min(65%, 300px);
+  height: 5px;
   border-radius: 99px;
-  background: rgba(255, 200, 220, 0.18);
+  background: rgba(255, 200, 220, 0.15);
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 200, 220, 0.15);
 }
-.v3-loading-bar-fill {
+.v3-state-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff5a82, #ff9aae);
+  background: linear-gradient(90deg, #ff5a82, #ff9aae, #ffc4d2);
   border-radius: 99px;
-  transition: width 0.25s ease-out;
+  transition: width 0.3s ease-out;
+  box-shadow: 0 0 10px rgba(255, 120, 160, 0.6);
 }
+
+.v3-state-retry {
+  margin-top: 6px;
+  padding: 10px 22px;
+  border: 1px solid rgba(255, 200, 220, 0.4);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff7aa6 0%, #ff5a82 100%);
+  color: #fff8ec;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(255, 90, 130, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.v3-state-retry:hover {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 12px 30px rgba(255, 90, 130, 0.6);
+}
+.v3-state-retry:active { transform: scale(0.97); }
 .v3-fs {
   position: absolute;
   top: 14px;
