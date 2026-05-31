@@ -188,7 +188,7 @@ export default function VideoScene() {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 180, damping: 12 }}
             >
-              💔
+              💗
             </motion.div>
             <div className="v3-state-title">אופס... משהו השתבש</div>
             <div className="v3-state-sub">הסרטון לא הצליח להיטען. בדקי את החיבור ונסי שוב.</div>
