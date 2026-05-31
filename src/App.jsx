@@ -4,7 +4,7 @@ import IdGateScene from "./components/IdGateScene";
 import LetterScene from "./components/LetterScene";
 import VideoScene from "./components/VideoScene";
 import Particles from "./components/Particles";
-import { localMusicUrl, localVideoUrl } from "./lib/demoAssets";
+import { localMusicUrl } from "./lib/demoAssets";
 import { loadFont } from "./components/HandwritingCanvas";
 import { useBackgroundMusic } from "./lib/useBackgroundMusic";
 
@@ -18,9 +18,11 @@ export default function App() {
 
   useEffect(() => { loadFont().catch(() => {}); }, []);
 
+  // Only prefetch the small music file; the 140MB video is loaded lazily by
+  // VideoScene itself (via the <video> element's own progressive download)
+  // so we don't burn bandwidth for visitors who never reach the video.
   useEffect(() => {
     fetch(localMusicUrl).catch(() => {});
-    fetch(localVideoUrl).catch(() => {});
   }, []);
 
   useBackgroundMusic(audioRef, {
