@@ -4,7 +4,7 @@ import IdGateScene from "./components/IdGateScene";
 import LetterScene from "./components/LetterScene";
 import VideoScene from "./components/VideoScene";
 import Particles from "./components/Particles";
-import { localMusicUrl } from "./lib/demoAssets";
+import { localMusicUrl, localVideoUrl } from "./lib/demoAssets";
 import { loadFont } from "./components/HandwritingCanvas";
 import { useBackgroundMusic } from "./lib/useBackgroundMusic";
 
@@ -18,12 +18,23 @@ export default function App() {
 
   useEffect(() => { loadFont().catch(() => {}); }, []);
 
-  // Only prefetch the small music file; the 140MB video is loaded lazily by
-  // VideoScene itself (via the <video> element's own progressive download)
-  // so we don't burn bandwidth for visitors who never reach the video.
   useEffect(() => {
     fetch(localMusicUrl).catch(() => {});
   }, []);
+
+  // Warm the video download once the user reaches the letter — by the time
+  // they finish reading, most of the file is already in the browser cache.
+  // We DON'T preload on the gate, so casual visitors who never reach the
+  // letter don't spend our bandwidth.
+  useEffect(() => {
+    if (stage !== STAGES.LETTER) return;
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "video";
+    link.href = localVideoUrl;
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, [stage]);
 
   useBackgroundMusic(audioRef, {
     audible: stage === STAGES.LETTER && !muted,
