@@ -2011,7 +2011,7 @@ body::after {
   flex: 0 1 auto;
   /* Responsive height that always leaves room for overline + meta + padding
      within 100dvh — no scroll, no clipping. */
-  height: clamp(240px, 62dvh, 720px);
+  height: clamp(320px, 82dvh, 960px);
   border-radius: clamp(18px, 3vw, 32px);
   overflow: hidden;
   background: #000;
