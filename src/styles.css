@@ -1903,16 +1903,27 @@ body::after {
   position: relative;
   width: 100%;
   max-width: 580px;
-  max-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: clamp(8px, 2vw, 16px);
+  /* Reserve space at the bottom for the fixed "חזרה למכתב" button so the
+     meta line never tucks underneath it on phones. */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
   gap: clamp(6px, 1.4vw, 12px);
   isolation: isolate;
   overflow: hidden;
+}
+@media (max-width: 640px) {
+  .scene.v3 { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); }
+  .v3-frame { max-height: 70dvh; }
+}
+@media (max-height: 700px) {
+  .v3-frame { max-height: 64dvh; }
 }
 .v3-aura {
   position: absolute;
@@ -2008,10 +2019,11 @@ body::after {
 .v3-frame {
   position: relative;
   width: 100%;
-  flex: 0 1 auto;
-  /* Responsive height that always leaves room for overline + meta + padding
+  flex: 1 1 auto;
+  min-height: 240px;
+  /* Bounded by the flex parent so overline + meta + padding always fit
      within 100dvh — no scroll, no clipping. */
-  height: clamp(320px, 82dvh, 960px);
+  max-height: 82dvh;
   border-radius: clamp(18px, 3vw, 32px);
   overflow: hidden;
   background: #000;
