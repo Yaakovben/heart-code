@@ -261,7 +261,7 @@ export default function VideoScene() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7, duration: 0.9 }}
       >
-        <div className="v3-track-sub">❤️ רות & יעקב</div>
+        <div className="v3-track-sub">❤️ רות & יעקב ❤️</div>
       </motion.div>
     </motion.section>
   );
