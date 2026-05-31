@@ -6,136 +6,45 @@ import VideoScene from "./components/VideoScene";
 import Particles from "./components/Particles";
 import { localMusicUrl, localVideoUrl } from "./lib/demoAssets";
 import { loadFont } from "./components/HandwritingCanvas";
-import { unlockAudio as unlockChatAudio } from "./lib/chatSounds";
+import { useBackgroundMusic } from "./lib/useBackgroundMusic";
 
-const TARGET_VOLUME = 0.7;
-const FADE_DURATION_MS = 1200;
-const FADE_DOWN_MS = 200;
+const MUSIC_VOLUME = 0.7;
+const STAGES = { GATE: "gate", LETTER: "letter", VIDEO: "video" };
 
 export default function App() {
-  const [stage, setStage] = useState("gate");
+  const [stage, setStage] = useState(STAGES.GATE);
   const [muted, setMuted] = useState(false);
-  // Native <audio> ref — using the exact pipeline the working VideoScene
-  // audio uses on this iPhone. No Howler, no Web Audio, no AudioContext.
   const audioRef = useRef(null);
-  const fadeRafRef = useRef(null);
 
-  useEffect(() => {
-    loadFont().catch(() => {});
-  }, []);
+  useEffect(() => { loadFont().catch(() => {}); }, []);
 
   useEffect(() => {
     fetch(localMusicUrl).catch(() => {});
     fetch(localVideoUrl).catch(() => {});
   }, []);
 
-  // Unlock the audio element on the first user gesture WITHOUT actually
-  // playing music yet. We play→pause inside the gesture to satisfy iOS
-  // autoplay policy; subsequent play() (when stage leaves gate) is then
-  // allowed and stays in sync with the visuals.
-  useEffect(() => {
-    let unlocked = false;
-    const start = () => {
-      // Always unlock the chat sounds (HTML5 <audio> blobs) on every gesture.
-      unlockChatAudio();
-      if (unlocked) return;
-      const a = audioRef.current;
-      if (!a) return;
-      unlocked = true;
-      // iOS Safari IGNORES audio.volume — only `muted` works.
-      // Start the music muted and playing; the volume effect unmutes
-      // (instantly, since fades won't work on iOS either) when the
-      // user reaches the letter scene.
-      a.muted = true;
-      a.volume = 0;
-      a.play().catch(() => {});
-    };
-    const evs = ["pointerdown", "touchstart", "click", "keydown"];
-    evs.forEach((ev) => window.addEventListener(ev, start, { passive: true }));
-    return () => evs.forEach((ev) => window.removeEventListener(ev, start));
-  }, []);
-
-  // Stage-driven mute control. iOS ignores `.volume`, so we toggle `.muted`
-  // (which IS respected on iOS). Music is silent during gate + video,
-  // audible only in the letter scene.
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const shouldBeAudible = stage === "letter" && !muted;
-    a.muted = !shouldBeAudible;
-    a.volume = TARGET_VOLUME;
-    if (shouldBeAudible) {
-      const ensurePlaying = (attempts = 0) => {
-        if (!a.paused) return;
-        a.play().catch(() => {
-          if (attempts < 6) setTimeout(() => ensurePlaying(attempts + 1), 200);
-        });
-      };
-      ensurePlaying();
-    }
-  }, [stage, muted]);
-
-  // Recovery on every user tap — if audio is paused for any reason (iOS
-  // interruption, lost focus, etc.) the next touch wakes it up.
-  useEffect(() => {
-    const onAnyTap = () => {
-      const a = audioRef.current;
-      if (!a || muted || stage === "gate" || stage === "video") return;
-      if (a.paused) a.play().catch(() => {});
-    };
-    window.addEventListener("pointerdown", onAnyTap, { passive: true });
-    window.addEventListener("touchstart", onAnyTap, { passive: true });
-    return () => {
-      window.removeEventListener("pointerdown", onAnyTap);
-      window.removeEventListener("touchstart", onAnyTap);
-    };
-  }, [stage, muted]);
-
-  // Backgrounding / focus recovery — native <audio> handles most of this
-  // itself, but iOS sometimes pauses on tab-hide without auto-resuming.
-  useEffect(() => {
-    const onShow = () => {
-      const a = audioRef.current;
-      if (!a || muted || stage === "gate" || stage === "video") return;
-      if (a.paused) a.play().catch(() => {});
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") onShow();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pageshow", onShow);
-    window.addEventListener("focus", onShow);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pageshow", onShow);
-      window.removeEventListener("focus", onShow);
-    };
-  }, [stage, muted]);
-
-  useEffect(() => () => {
-    if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
-  }, []);
+  useBackgroundMusic(audioRef, {
+    audible: stage === STAGES.LETTER && !muted,
+    volume: MUSIC_VOLUME,
+  });
 
   return (
     <div className="app-shell">
-      {/* Single, native <audio> for the background music — same pipeline as
-          the VideoScene <video> the user has confirmed works on iPhone. */}
       <audio
         ref={audioRef}
         src={localMusicUrl}
         loop
         playsInline
         preload="auto"
-        // @ts-ignore — iOS-specific, still respected by older Safari.
         webkit-playsinline="true"
         aria-hidden
         style={{ display: "none" }}
       />
       <Particles />
 
-      {stage !== "gate" && (
+      {stage !== STAGES.GATE && (
         <>
-          {stage !== "video" && (
+          {stage !== STAGES.VIDEO && (
             <motion.button
               className="mute-btn"
               onClick={() => setMuted((m) => !m)}
@@ -147,11 +56,10 @@ export default function App() {
             </motion.button>
           )}
 
-          {/* Back arrow — top-left corner, discreet */}
-          {stage === "video" && (
+          {stage === STAGES.VIDEO && (
             <motion.button
               className="nav-back-top"
-              onClick={() => setStage("letter")}
+              onClick={() => setStage(STAGES.LETTER)}
               initial={{ x: -30, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.6 }}
@@ -166,11 +74,10 @@ export default function App() {
             </motion.button>
           )}
 
-          {/* Primary continue — floating, bottom-left (Hebrew RTL forward = left) */}
-          {stage === "letter" && (
+          {stage === STAGES.LETTER && (
             <motion.button
               className="nav-continue"
-              onClick={() => setStage("video")}
+              onClick={() => setStage(STAGES.VIDEO)}
               initial={{ x: -30, y: 12, opacity: 0 }}
               animate={{ x: 0, y: 0, opacity: 1 }}
               transition={{ delay: 0.8, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -188,11 +95,11 @@ export default function App() {
       )}
 
       <AnimatePresence mode="wait">
-        {stage === "gate" && (
-          <IdGateScene key="gate" onUnlock={() => setStage("letter")} />
+        {stage === STAGES.GATE && (
+          <IdGateScene key="gate" onUnlock={() => setStage(STAGES.LETTER)} />
         )}
-        {stage === "letter" && <LetterScene key="letter" muted={muted} />}
-        {stage === "video" && <VideoScene key="video" />}
+        {stage === STAGES.LETTER && <LetterScene key="letter" muted={muted} />}
+        {stage === STAGES.VIDEO && <VideoScene key="video" />}
       </AnimatePresence>
     </div>
   );

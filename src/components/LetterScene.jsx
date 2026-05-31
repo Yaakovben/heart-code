@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Howl } from "howler";
 import message from "../data/message.txt?raw";
 import writingSoundUrl from "../assets/writing.mp3";
 import HandwritingCanvas from "./HandwritingCanvas";
@@ -46,9 +45,7 @@ function useQuillTicker(active) {
         if (cancelled) return;
         ctxRef.current = ctx;
         bufferRef.current = decoded;
-      } catch (e) {
-        console.error("writing sound load fail", e);
-      }
+      } catch {}
     })();
     return () => { cancelled = true; };
   }, []);
