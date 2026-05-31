@@ -5,6 +5,8 @@ import { localVideoUrl } from "../lib/demoAssets";
 export default function VideoScene() {
   const videoRef = useRef(null);
   const [hasVideo, setHasVideo] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
   const [isPresent, safeToRemove] = usePresence();
 
   // The moment AnimatePresence starts our exit animation, pause + detach the
@@ -33,8 +35,20 @@ export default function VideoScene() {
       if (!isFinite(v.duration) || v.duration < 1) setHasVideo(false);
     };
     const onErr = () => setHasVideo(false);
+    const onProgress = () => {
+      if (!v.duration || !v.buffered.length) return;
+      const buffered = v.buffered.end(v.buffered.length - 1);
+      setProgress(Math.min(1, buffered / v.duration));
+    };
+    const onReady = () => setLoading(false);
+    const onWaiting = () => setLoading(true);
+
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("error", onErr);
+    v.addEventListener("progress", onProgress);
+    v.addEventListener("canplay", onReady);
+    v.addEventListener("playing", onReady);
+    v.addEventListener("waiting", onWaiting);
     v.play().catch(() => {
       v.muted = true;
       v.play().catch(() => {});
@@ -42,6 +56,10 @@ export default function VideoScene() {
     return () => {
       v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("error", onErr);
+      v.removeEventListener("progress", onProgress);
+      v.removeEventListener("canplay", onReady);
+      v.removeEventListener("playing", onReady);
+      v.removeEventListener("waiting", onWaiting);
       // Explicitly stop the video on unmount — without this, mobile browsers
       // sometimes keep the audio track playing for a beat after the element
       // is removed, layering it on top of the background music when the
@@ -172,6 +190,36 @@ export default function VideoScene() {
               ▶
             </motion.div>
             <p>הסרטון שלך</p>
+          </div>
+        )}
+        {hasVideo && loading && (
+          <div className="v3-loading" aria-live="polite">
+            <motion.div
+              className="v3-loading-spinner"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+            >
+              <svg viewBox="0 0 50 50" width="56" height="56" aria-hidden>
+                <circle cx="25" cy="25" r="20" fill="none"
+                  stroke="rgba(255,200,220,0.18)" strokeWidth="4" />
+                <circle cx="25" cy="25" r="20" fill="none"
+                  stroke="#ff7a9a" strokeWidth="4" strokeLinecap="round"
+                  strokeDasharray="90 200" />
+              </svg>
+            </motion.div>
+            <div className="v3-loading-text">
+              {progress > 0
+                ? `טוען את הסרטון... ${Math.round(progress * 100)}%`
+                : "טוען את הסרטון..."}
+            </div>
+            {progress > 0 && (
+              <div className="v3-loading-bar">
+                <div
+                  className="v3-loading-bar-fill"
+                  style={{ width: `${Math.round(progress * 100)}%` }}
+                />
+              </div>
+            )}
           </div>
         )}
         {hasVideo && (
