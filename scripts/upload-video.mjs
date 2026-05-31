@@ -13,9 +13,12 @@ if (!token) {
   process.exit(1);
 }
 
-const path = resolve("src/assets/video.mp4");
+// Upload the compressed video, but keep the blob's public filename as
+// `video.mp4` so VITE_VIDEO_URL never has to change.
+const source = process.argv[2] || "src/assets/video-small.mp4";
+const path = resolve(source);
 const data = readFileSync(path);
-console.log(`Uploading ${(data.length / 1024 / 1024).toFixed(1)} MB ...`);
+console.log(`Uploading ${source} (${(data.length / 1024 / 1024).toFixed(1)} MB) ...`);
 
 const blob = await put("video.mp4", data, {
   access: "public",
