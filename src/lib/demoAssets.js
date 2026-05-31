@@ -8,9 +8,7 @@ import localVideoFallback from "../assets/video.mp4";
 const HOSTED_VIDEO_URL =
   "https://ifjg9y5tj20lur8r.public.blob.vercel-storage.com/video-1780221113811.mp4";
 
-// Optional override via env var (kept for future flexibility).
-const envOverride = import.meta.env.VITE_VIDEO_URL;
-
 export const localMusicUrl = musicUrl;
-export const localVideoUrl =
-  envOverride || (import.meta.env.PROD ? HOSTED_VIDEO_URL : localVideoFallback);
+export const localVideoUrl = import.meta.env.PROD
+  ? HOSTED_VIDEO_URL
+  : localVideoFallback;
