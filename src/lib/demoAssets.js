@@ -6,7 +6,7 @@ import localVideoFallback from "../assets/video.mp4";
 // when we re-upload. To swap the video: run scripts/upload-versioned.mjs and
 // paste the new URL here.
 const HOSTED_VIDEO_URL =
-  "https://ifjg9y5tj20lur8r.public.blob.vercel-storage.com/video-1780229665286.mp4";
+  "https://ifjg9y5tj20lur8r.public.blob.vercel-storage.com/video-1780230935794.mp4";
 
 export const localMusicUrl = musicUrl;
 export const localVideoUrl = import.meta.env.PROD
