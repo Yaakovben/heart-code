@@ -158,7 +158,7 @@ export default function VideoScene() {
         transition={{ delay: 0.3, duration: 0.9 }}
       >
         <span className="v3-overline-heart">♥</span>
-        <span>בשבילך, אהובתי</span>
+        <span>יש רגעים שאי אפשר להסביר</span>
         <span className="v3-overline-heart">♥</span>
       </motion.div>
 
@@ -261,7 +261,7 @@ export default function VideoScene() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7, duration: 0.9 }}
       >
-        <div className="v3-track-sub">~ באהבה אינסופית, יעקב ~</div>
+        <div className="v3-track-sub">❤️ רות & יעקב</div>
       </motion.div>
     </motion.section>
   );
