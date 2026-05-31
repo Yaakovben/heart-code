@@ -191,7 +191,7 @@ export default function VideoScene() {
               💗
             </motion.div>
             <div className="v3-state-title">אופס... משהו השתבש</div>
-            <div className="v3-state-sub">הסרטון לא הצליח להיטען. בדקי את החיבור ונסי שוב.</div>
+            <div className="v3-state-sub">מכין לך משהו מיוחד — בדקי את החיבור ונסי שוב.</div>
             <button
               className="v3-state-retry"
               onClick={() => {
@@ -230,7 +230,7 @@ export default function VideoScene() {
               ))}
             </div>
             <div className="v3-state-title">
-              {progress > 0 ? `מכינה לך משהו מיוחד... ${Math.round(progress * 100)}%` : "מכינה לך משהו מיוחד..."}
+              {progress > 0 ? `מכין לך משהו מיוחד... ${Math.round(progress * 100)}%` : "מכין לך משהו מיוחד..."}
             </div>
             {progress > 0 && (
               <div className="v3-state-bar">
