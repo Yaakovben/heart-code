@@ -8,7 +8,25 @@ export default function VideoScene() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [ended, setEnded] = useState(false);
+  const [waitTier, setWaitTier] = useState(0);
   const [isPresent, safeToRemove] = usePresence();
+
+  // While loading, escalate the reassurance message every ~6s so the viewer
+  // knows it's still on its way and worth waiting for.
+  useEffect(() => {
+    if (!loading) {
+      setWaitTier(0);
+      return;
+    }
+    const t1 = setTimeout(() => setWaitTier(1), 6000);
+    const t2 = setTimeout(() => setWaitTier(2), 14000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [loading]);
+
+  const loadingMessage =
+    waitTier === 0 ? "הרגעים שלנו נטענים..." :
+    waitTier === 1 ? "עוד רגע, תכף עולה..." :
+                     "תכף תכף, שווה לחכות ❤";
 
   // The moment AnimatePresence starts our exit animation, pause + detach the
   // video so its audio track stops well before unmount. Then schedule the
@@ -194,8 +212,8 @@ export default function VideoScene() {
             >
               💗
             </motion.div>
-            <div className="v3-state-title">אופס... משהו השתבש</div>
-            <div className="v3-state-sub">מכין לך משהו מיוחד — בדקי את החיבור ונסי שוב.</div>
+            <div className="v3-state-title">אופס, קרתה תקלה לא צפויה</div>
+            <div className="v3-state-sub">בדקי את החיבור ונסי שוב — מחכה לך משהו מיוחד.</div>
             <button
               className="v3-state-retry"
               onClick={() => {
@@ -234,7 +252,7 @@ export default function VideoScene() {
               ))}
             </div>
             <div className="v3-state-title">
-              {progress > 0 ? `הרגעים שלנו נטענים... ${Math.round(progress * 100)}%` : "הרגעים שלנו נטענים..."}
+              {progress > 0 ? `${loadingMessage} ${Math.round(progress * 100)}%` : loadingMessage}
             </div>
             {progress > 0 && (
               <div className="v3-state-bar">
