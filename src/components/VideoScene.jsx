@@ -270,21 +270,24 @@ export default function VideoScene() {
             role="status"
           >
             <div className="v3-ending-rising" aria-hidden>
-              {Array.from({ length: 14 }).map((_, i) => {
+              {Array.from({ length: 18 }).map((_, i) => {
                 const left = ((i * 73) % 95) + 2;
                 const delay = (i * 0.4) % 6;
                 const dur = 6 + (i % 4) * 1.2;
                 const size = 14 + (i % 4) * 6;
+                // Mix hearts and shimmering rings.
+                const isRing = i % 3 === 0;
                 return (
                   <motion.span
                     key={i}
-                    className="v3-ending-rising-heart"
+                    className={isRing ? "v3-ending-rising-ring" : "v3-ending-rising-heart"}
                     style={{ left: `${left}%`, fontSize: `${size}px` }}
                     initial={{ y: "20%", opacity: 0 }}
                     animate={{
                       y: "-120%",
-                      opacity: [0, 0.85, 0.85, 0],
+                      opacity: [0, 0.9, 0.9, 0],
                       x: [(i % 3 - 1) * 12, (i % 3 - 1) * -8, (i % 3 - 1) * 14],
+                      rotate: isRing ? [0, 360] : 0,
                     }}
                     transition={{
                       duration: dur,
@@ -292,9 +295,35 @@ export default function VideoScene() {
                       repeat: Infinity,
                       ease: "easeOut",
                       opacity: { duration: dur, delay, repeat: Infinity, times: [0, 0.15, 0.85, 1] },
+                      rotate: isRing ? { duration: dur, delay, repeat: Infinity, ease: "linear" } : undefined,
                     }}
                   >
-                    💗
+                    {isRing ? "💍" : "💗"}
+                  </motion.span>
+                );
+              })}
+              {/* Sparkle dots that glint around the rings */}
+              {Array.from({ length: 12 }).map((_, i) => {
+                const left = ((i * 53) % 95) + 2;
+                const top = ((i * 37) % 85) + 8;
+                const delay = (i * 0.35) % 4;
+                return (
+                  <motion.span
+                    key={`s${i}`}
+                    className="v3-ending-sparkle"
+                    style={{ left: `${left}%`, top: `${top}%` }}
+                    animate={{
+                      opacity: [0, 1, 0],
+                      scale: [0.4, 1.1, 0.4],
+                    }}
+                    transition={{
+                      duration: 2,
+                      delay,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    ✨
                   </motion.span>
                 );
               })}
@@ -308,18 +337,10 @@ export default function VideoScene() {
               ❤️
             </motion.div>
             <motion.div
-              className="v3-ending-title"
-              initial={{ y: 18, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-            >
-              כאן רק מתחיל...
-            </motion.div>
-            <motion.div
               className="v3-ending-names"
               initial={{ y: 14, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ delay: 0.6, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
             >
               <span className="v3-ending-name">Yaakov</span>
               <span className="v3-ending-amp">&</span>
