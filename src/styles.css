@@ -2138,6 +2138,104 @@ body::after {
   box-shadow: 0 12px 30px rgba(255, 90, 130, 0.6);
 }
 .v3-state-retry:active { transform: scale(0.97); }
+
+/* Ending overlay — gently fades in over the last frame of the video. */
+.v3-ending {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at center, rgba(255, 160, 190, 0.32) 0%, rgba(30, 8, 18, 0.92) 75%),
+    rgba(15, 5, 10, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 4;
+  overflow: hidden;
+}
+.v3-ending-rising {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.v3-ending-rising-heart {
+  position: absolute;
+  bottom: 0;
+  display: inline-block;
+  filter: drop-shadow(0 0 12px rgba(255, 120, 160, 0.65));
+}
+.v3-ending-heart {
+  font-size: clamp(3.2rem, 11vw, 5rem);
+  filter: drop-shadow(0 0 26px rgba(255, 100, 140, 0.75));
+  z-index: 1;
+}
+.v3-ending-title {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.5rem, 5.5vw, 2.2rem);
+  letter-spacing: 0.03em;
+  color: #fff7ec;
+  text-shadow: 0 2px 18px rgba(255, 130, 170, 0.55);
+  z-index: 1;
+}
+.v3-ending-names {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 14px;
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 600;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  letter-spacing: 0.04em;
+  z-index: 1;
+  filter: drop-shadow(0 0 18px rgba(255, 215, 100, 0.35));
+}
+.v3-ending-name,
+.v3-ending-amp {
+  background: linear-gradient(
+    100deg,
+    #f9e8b3 0%,
+    #ffd76a 25%,
+    #fff5cc 45%,
+    #ffd76a 65%,
+    #c9a55a 85%,
+    #f9e8b3 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: v3-ending-shimmer 4.5s ease-in-out infinite;
+}
+.v3-ending-amp {
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.85em;
+  opacity: 0.9;
+  animation-delay: 0.6s;
+}
+.v3-ending-name {
+  display: inline-block;
+  animation:
+    v3-ending-shimmer 4.5s ease-in-out infinite,
+    v3-ending-float 5s ease-in-out infinite;
+}
+.v3-ending-name:last-child { animation-delay: 0s, 1.2s; }
+
+@keyframes v3-ending-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes v3-ending-float {
+  0%, 100% { transform: translateY(0) rotate(-0.4deg); }
+  50%      { transform: translateY(-4px) rotate(0.4deg); }
+}
 .v3-fs {
   position: absolute;
   top: 14px;

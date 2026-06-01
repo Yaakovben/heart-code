@@ -7,6 +7,7 @@ export default function VideoScene() {
   const [hasVideo, setHasVideo] = useState(true);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [ended, setEnded] = useState(false);
   const [isPresent, safeToRemove] = usePresence();
 
   // The moment AnimatePresence starts our exit animation, pause + detach the
@@ -42,6 +43,7 @@ export default function VideoScene() {
     };
     const onReady = () => setLoading(false);
     const onWaiting = () => setLoading(true);
+    const onEnded = () => setEnded(true);
 
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("error", onErr);
@@ -49,6 +51,7 @@ export default function VideoScene() {
     v.addEventListener("canplay", onReady);
     v.addEventListener("playing", onReady);
     v.addEventListener("waiting", onWaiting);
+    v.addEventListener("ended", onEnded);
     v.play().catch(() => {
       v.muted = true;
       v.play().catch(() => {});
@@ -60,6 +63,7 @@ export default function VideoScene() {
       v.removeEventListener("canplay", onReady);
       v.removeEventListener("playing", onReady);
       v.removeEventListener("waiting", onWaiting);
+      v.removeEventListener("ended", onEnded);
       // Explicitly stop the video on unmount — without this, mobile browsers
       // sometimes keep the audio track playing for a beat after the element
       // is removed, layering it on top of the background music when the
@@ -238,6 +242,72 @@ export default function VideoScene() {
               </div>
             )}
           </div>
+        )}
+        {ended && (
+          <motion.div
+            className="v3-ending"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.4, ease: "easeOut" }}
+            role="status"
+          >
+            <div className="v3-ending-rising" aria-hidden>
+              {Array.from({ length: 14 }).map((_, i) => {
+                const left = ((i * 73) % 95) + 2;
+                const delay = (i * 0.4) % 6;
+                const dur = 6 + (i % 4) * 1.2;
+                const size = 14 + (i % 4) * 6;
+                return (
+                  <motion.span
+                    key={i}
+                    className="v3-ending-rising-heart"
+                    style={{ left: `${left}%`, fontSize: `${size}px` }}
+                    initial={{ y: "20%", opacity: 0 }}
+                    animate={{
+                      y: "-120%",
+                      opacity: [0, 0.85, 0.85, 0],
+                      x: [(i % 3 - 1) * 12, (i % 3 - 1) * -8, (i % 3 - 1) * 14],
+                    }}
+                    transition={{
+                      duration: dur,
+                      delay,
+                      repeat: Infinity,
+                      ease: "easeOut",
+                      opacity: { duration: dur, delay, repeat: Infinity, times: [0, 0.15, 0.85, 1] },
+                    }}
+                  >
+                    💗
+                  </motion.span>
+                );
+              })}
+            </div>
+            <motion.div
+              className="v3-ending-heart"
+              animate={{ scale: [1, 1.12, 1] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+              aria-hidden
+            >
+              ❤️
+            </motion.div>
+            <motion.div
+              className="v3-ending-title"
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+              כאן רק מתחיל...
+            </motion.div>
+            <motion.div
+              className="v3-ending-names"
+              initial={{ y: 14, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <span className="v3-ending-name">Yaakov</span>
+              <span className="v3-ending-amp">&</span>
+              <span className="v3-ending-name">Ruth</span>
+            </motion.div>
+          </motion.div>
         )}
         {hasVideo && (
           <button
