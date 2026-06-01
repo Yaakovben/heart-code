@@ -230,7 +230,7 @@ export default function VideoScene() {
               ))}
             </div>
             <div className="v3-state-title">
-              {progress > 0 ? `מכין לך משהו מיוחד... ${Math.round(progress * 100)}%` : "מכין לך משהו מיוחד..."}
+              {progress > 0 ? `הרגעים שלנו נטענים... ${Math.round(progress * 100)}%` : "הרגעים שלנו נטענים..."}
             </div>
             {progress > 0 && (
               <div className="v3-state-bar">
