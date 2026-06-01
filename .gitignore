@@ -4,3 +4,6 @@ dist
 .env
 .env.local
 *.log
+
+# auto-generated artifact from the video compression workflow
+src/assets/video-small.mp4
